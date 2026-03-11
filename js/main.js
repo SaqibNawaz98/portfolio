@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAnimations();
     initSpaceScene();
     initChromeEffects();
+    initGlobe();
     setCurrentYear();
 });
 
@@ -5118,5 +5119,234 @@ function initSpaceScene() {
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) cancelAnimationFrame(animationId);
         else animate();
+    });
+}
+
+function initGlobe() {
+    const container = document.getElementById('globe-container');
+    if (!container || typeof THREE === 'undefined') return;
+
+    const width = container.clientWidth || 400;
+    const height = container.clientHeight || 400;
+
+    const scene = new THREE.Scene();
+    
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 1.5, 3.2);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true 
+    });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const geometry = new THREE.SphereGeometry(1, 64, 64);
+    
+    const textureLoader = new THREE.TextureLoader();
+    const earthTexture = textureLoader.load('https://unpkg.com/three-globe@2.24.13/example/img/earth-blue-marble.jpg');
+    const bumpTexture = textureLoader.load('https://unpkg.com/three-globe@2.24.13/example/img/earth-topology.png');
+    
+    const material = new THREE.MeshPhongMaterial({
+        map: earthTexture,
+        bumpMap: bumpTexture,
+        bumpScale: 0.02,
+        specular: new THREE.Color(0x333333),
+        shininess: 5
+    });
+
+    const globe = new THREE.Mesh(geometry, material);
+    scene.add(globe);
+
+    // Starfield background
+    const starsGeometry = new THREE.BufferGeometry();
+    const starCount = 1500;
+    const positions = new Float32Array(starCount * 3);
+    const sizes = new Float32Array(starCount);
+    
+    for (let i = 0; i < starCount; i++) {
+        const radius = 3 + Math.random() * 5;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        
+        positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+        positions[i * 3 + 2] = radius * Math.cos(phi);
+        sizes[i] = Math.random() * 2 + 0.5;
+    }
+    
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starsGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    
+    const starsMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.05,
+        transparent: true,
+        opacity: 1,
+        sizeAttenuation: true
+    });
+    
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
+    scene.add(stars);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 3, 5);
+    scene.add(directionalLight);
+
+    // Robbinsville, New Jersey coordinates
+    const njLat = 40.244035010266586;
+    const njLon = -74.63656455101855;
+    
+    // Convert lat/lon to 3D position on unit sphere
+    const phi = (90 - njLat) * (Math.PI / 180);
+    const theta = (njLon + 180) * (Math.PI / 180);
+    
+    const pinX = -Math.sin(phi) * Math.cos(theta);
+    const pinY = Math.cos(phi);
+    const pinZ = Math.sin(phi) * Math.sin(theta);
+
+    // Create static pushpin - red ball with silver tack
+    const pinGroup = new THREE.Group();
+    
+    // Red glossy ball head
+    const headMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0xff0000,
+        emissive: 0x550000,
+        specular: 0xffffff,
+        shininess: 100
+    });
+    const headGeometry = new THREE.SphereGeometry(0.05, 32, 32);
+    const head = new THREE.Mesh(headGeometry, headMaterial);
+    head.position.set(0, 0, 0.12);
+    pinGroup.add(head);
+    
+    // Silver metal tack
+    const silverMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0xcccccc,
+        specular: 0xffffff,
+        shininess: 150
+    });
+    
+    // Tack needle
+    const tackGeometry = new THREE.ConeGeometry(0.012, 0.1, 12);
+    const tack = new THREE.Mesh(tackGeometry, silverMaterial);
+    tack.position.set(0, 0, 0.05);
+    tack.rotation.x = -Math.PI / 2;
+    pinGroup.add(tack);
+    
+    // Position at NJ location on globe surface
+    pinGroup.position.set(pinX, pinY, pinZ);
+    
+    // Make pin point outward from center
+    pinGroup.lookAt(pinX * 2, pinY * 2, pinZ * 2);
+    
+    globe.add(pinGroup);
+    
+    // Rotate globe to show NJ
+    globe.rotation.y = -theta + Math.PI / 2;
+
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    let autoRotate = true;
+    let velocity = { x: 0, y: 0 };
+    let resumeTimeout = null;
+    
+    // Target rotation to center NJ (facing camera)
+    const njTargetRotationY = THREE.MathUtils.degToRad(njLon + 70);
+    let isAnimatingToNJ = false;
+    
+    // Function to resume auto-rotation after delay
+    const scheduleResumeRotation = () => {
+        if (resumeTimeout) clearTimeout(resumeTimeout);
+        resumeTimeout = setTimeout(() => {
+            autoRotate = true;
+        }, 3000);
+    };
+    
+    // Click handler for location text
+    const locationText = document.getElementById('globe-location');
+    if (locationText) {
+        locationText.addEventListener('click', () => {
+            if (resumeTimeout) clearTimeout(resumeTimeout);
+            autoRotate = false;
+            isAnimatingToNJ = true;
+            velocity = { x: 0, y: 0 };
+        });
+    }
+
+    container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        autoRotate = false;
+        if (resumeTimeout) clearTimeout(resumeTimeout);
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+
+    container.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - previousMousePosition.x;
+        const deltaY = e.clientY - previousMousePosition.y;
+        
+        globe.rotation.y += deltaX * 0.005;
+        
+        velocity = { x: deltaX * 0.005, y: 0 };
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+
+    container.addEventListener('mouseup', () => { 
+        isDragging = false;
+        scheduleResumeRotation();
+    });
+    container.addEventListener('mouseleave', () => { 
+        isDragging = false;
+        scheduleResumeRotation();
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        // Slowly rotate stars
+        stars.rotation.y += 0.0001;
+        stars.rotation.x += 0.00005;
+        
+        if (isAnimatingToNJ) {
+            // Smoothly rotate to center NJ
+            const diff = njTargetRotationY - globe.rotation.y;
+            // Normalize the difference to take shortest path
+            const normalizedDiff = Math.atan2(Math.sin(diff), Math.cos(diff));
+            
+            if (Math.abs(normalizedDiff) < 0.01) {
+                globe.rotation.y = njTargetRotationY;
+                isAnimatingToNJ = false;
+                scheduleResumeRotation();
+            } else {
+                globe.rotation.y += normalizedDiff * 0.08;
+            }
+        } else if (!isDragging) {
+            velocity.x *= 0.95;
+            velocity.y *= 0.95;
+            globe.rotation.y += velocity.x;
+            
+            if (autoRotate) {
+                // Spin on Earth's axis
+                globe.rotation.y += 0.002;
+            }
+        }
+        
+        renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+        const newWidth = container.clientWidth;
+        const newHeight = container.clientHeight;
+        camera.aspect = newWidth / newHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(newWidth, newHeight);
     });
 }

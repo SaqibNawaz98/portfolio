@@ -619,6 +619,44 @@
     filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.5));
 }
 
+.globe__location {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.globe__location:hover {
+    color: var(--color-text);
+}
+
+.about__image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px;
+    margin: -60px;
+    overflow: visible;
+}
+
+.about__globe-container {
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 550px;
+    cursor: grab;
+    overflow: visible;
+}
+
+.about__globe-container:active {
+    cursor: grabbing;
+}
+
+.about__globe-container canvas {
+    border-radius: 50%;
+}
+
 @media (max-width: 768px) {
     .about__content {
         grid-template-columns: 1fr;
