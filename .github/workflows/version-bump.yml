@@ -80,9 +80,13 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
 
-      - name: Update VERSION file
+      - name: Update VERSION file and index.html
         run: |
-          echo "${{ steps.new_version.outputs.new_version }}" > VERSION
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          echo "$NEW_VERSION" > VERSION
+          
+          # Update version in index.html footer
+          sed -i 's/<p class="footer__version">v[0-9]*\.[0-9]*\.[0-9]*<\/p>/<p class="footer__version">v'"$NEW_VERSION"'<\/p>/' index.html
           
       - name: Commit and tag
         run: |
