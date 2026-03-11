@@ -361,24 +361,26 @@ function initSpaceScene() {
         const newWidth = window.innerWidth;
         const newHeight = window.innerHeight;
         
-        // On mobile, only reinitialize if width changed significantly (ignore height changes from address bar)
+        // On mobile, only resize if width changed significantly (ignore height changes from address bar)
         const widthChanged = Math.abs(newWidth - lastWidth) > (isMobile ? 100 : 50);
         const heightChanged = Math.abs(newHeight - lastHeight) > 50;
-        const needsReinit = isMobile ? widthChanged : (widthChanged || heightChanged);
+        const needsResize = isMobile ? widthChanged : (widthChanged || heightChanged);
+        const isFirstLoad = lastWidth === 0;
         
-        width = canvas.width = newWidth;
-        height = canvas.height = newHeight;
-        centerX = width / 2;
-        centerY = height / 2;
-        
-        // Only reinitialize stars/clouds on significant size change or first load
-        if (needsReinit || lastWidth === 0) {
+        // Only update canvas dimensions on significant change or first load
+        // Setting canvas.width/height clears the canvas and causes flicker
+        if (needsResize || isFirstLoad) {
+            width = canvas.width = newWidth;
+            height = canvas.height = newHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+            
             initStars();
             initGasClouds();
+            
+            lastWidth = newWidth;
+            lastHeight = newHeight;
         }
-        
-        lastWidth = newWidth;
-        lastHeight = newHeight;
         
         // Initialize encounter and bright stars
         if (!currentEncounter) {
