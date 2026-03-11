@@ -5078,17 +5078,7 @@ function initSpaceScene() {
         }
     }
 
-    // Frame rate control for mobile (30fps instead of 60fps)
-    let lastFrameTime = 0;
-    const targetFrameTime = isMobile ? 33 : 16; // ~30fps on mobile, ~60fps on desktop
-
     function animate(currentTime) {
-        // Throttle frame rate on mobile
-        if (isMobile && currentTime - lastFrameTime < targetFrameTime) {
-            animationId = requestAnimationFrame(animate);
-            return;
-        }
-        lastFrameTime = currentTime;
 
         time += 0.016;
         spectrumHue = (spectrumHue + spectrumSpeed) % 360;
