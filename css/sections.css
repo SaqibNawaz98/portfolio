@@ -262,6 +262,8 @@
     align-items: center;
     position: relative;
     overflow: hidden;
+    /* Isolate from scroll repaints on mobile */
+    contain: layout style paint;
 }
 
 /* Hero bottom fade for seamless transition to next section */
@@ -411,10 +413,15 @@
     display: block;
     /* Ignore all touch/pointer events - let them pass through to scroll */
     pointer-events: none;
-    /* Mobile performance optimizations */
-    will-change: contents;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    /* Isolate canvas from scroll repaints */
+    contain: strict;
+    content-visibility: auto;
+    /* Force GPU layer */
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 .hero__scroll {
