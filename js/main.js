@@ -305,7 +305,7 @@ function initSpaceScene() {
     let width, height, centerX, centerY;
     let animationId;
     let time = 0;
-    
+
     // Flight speed
     const flightSpeed = 0.8;
 
@@ -731,6 +731,11 @@ function initSpaceScene() {
     ];
 
     function createPlanet(initialSpawn = false) {
+        // Small chance to spawn Death Star instead of a planet (3%)
+        if (!initialSpawn && Math.random() < 0.03) {
+            return createDeathStar();
+        }
+        
         // Pick a planet type that wasn't recently used
         let typeData;
         let attempts = 0;
@@ -982,6 +987,25 @@ function initSpaceScene() {
             shimmerPhase: Math.random() * Math.PI * 2,
         };
     }
+    
+    function createDeathStar() {
+        // Death Star spawns like a planet - stationary, on left or right side
+        const spawnOnLeft = Math.random() > 0.5;
+        const xOffset = 150 + Math.random() * 180; // Far from center
+        const x = spawnOnLeft ? -xOffset : xOffset;
+        const y = (Math.random() - 0.5) * 250; // Vertical variance
+        const z = 400 + Math.random() * 500; // Similar depth to planets
+        
+        return {
+            encounterType: 'deathStar',
+            x, y, z,
+            baseSize: 80 + Math.random() * 60, // Large 80-140
+            glowColor: [100, 255, 100], // Green superlaser
+            pulsePhase: Math.random() * Math.PI * 2,
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: 0.0002 + Math.random() * 0.0003, // Very slow rotation
+        };
+    }
 
     function createBlackHole() {
         const spawnZ = 1000 + Math.random() * 400;
@@ -1102,13 +1126,14 @@ function initSpaceScene() {
         const spawnZ = 1000 + Math.random() * 400;
         const angle = Math.random() * Math.PI * 2;
         const dist = 100 + Math.random() * 150; // Avoid center
-        
-        // Station configuration
+
+        // Station configuration - now includes telescopes, satellites, and Endurance
         const moduleCount = 3 + Math.floor(Math.random() * 3);
         const hasSolarPanels = Math.random() > 0.3;
         const hasAntenna = Math.random() > 0.5;
-        const stationType = Math.floor(Math.random() * 3); // 0: linear, 1: circular, 2: cross
-        
+        // 0: linear, 1: circular, 2: cross, 3: hubble telescope, 4: webb telescope, 5: satellite, 6: endurance
+        const stationType = Math.floor(Math.random() * 7);
+
         return {
             type: 'spaceStation',
             x: Math.cos(angle) * dist,
@@ -1121,6 +1146,16 @@ function initSpaceScene() {
             stationType,
             rotation: Math.random() * Math.PI * 2,
             rotSpeed: (Math.random() - 0.5) * 0.002,
+            // 3D spin - independent speed on each axis (0-1 range, can be negative)
+            spinX: Math.random() * Math.PI * 2, // Current X rotation
+            spinY: Math.random() * Math.PI * 2, // Current Y rotation
+            spinZ: Math.random() * Math.PI * 2, // Current Z rotation
+            spinSpeedX: (Math.random() > 0.5 ? 1 : -1) * Math.random(), // 0-1 speed on X
+            spinSpeedY: (Math.random() > 0.5 ? 1 : -1) * Math.random(), // 0-1 speed on Y
+            spinSpeedZ: (Math.random() > 0.5 ? 1 : -1) * Math.random(), // 0-1 speed on Z
+            // Drift movement - random direction and speed
+            driftX: (Math.random() - 0.5) * 0.7, // Horizontal drift speed
+            driftY: (Math.random() - 0.5) * 0.5, // Vertical drift speed
             lightPhase: Math.random() * Math.PI * 2,
             primaryColor: [180, 180, 190],
             accentColor: [100, 150, 200],
@@ -1157,28 +1192,45 @@ function initSpaceScene() {
     }
 
     function createAlienShip() {
-        const spawnZ = 1000 + Math.random() * 400;
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 100 + Math.random() * 150; // Avoid center
+        // Ships fly by like comets - with velocity
+        const startZ = 400 + Math.random() * 500;
         
+        // Start from edge (in world coordinates)
+        const startFromLeft = Math.random() > 0.5;
+        const startX = startFromLeft ? -350 : 350;
+        const startY = (Math.random() - 0.5) * 200;
+
         // Ship types with weighted rarity:
-        // 0: classic UFO saucer (common)
-        // 1: space shuttle (common)
-        // 3: triangular UFO (common)
-        // 4: Interstellar Endurance (rare)
-        // 5: Death Star (very rare)
+        // 0: classic UFO saucer, 1: space shuttle, 3: triangular UFO
+        // 6: rocket, 7: fighter
         const shipRoll = Math.random();
         let shipType;
-        if (shipRoll < 0.30) {
-            shipType = 0; // UFO saucer - 30%
-        } else if (shipRoll < 0.60) {
-            shipType = 1; // Space shuttle - 30%
-        } else if (shipRoll < 0.88) {
-            shipType = 3; // Triangle - 28%
-        } else if (shipRoll < 0.96) {
-            shipType = 4; // Endurance - 8% (rare)
+        if (shipRoll < 0.27) {
+            shipType = 0; // UFO saucer - 27%
+        } else if (shipRoll < 0.54) {
+            shipType = 1; // Space shuttle - 27%
+        } else if (shipRoll < 0.75) {
+            shipType = 3; // Triangle - 21%
+        } else if (shipRoll < 0.90) {
+            shipType = 6; // Rocket - 15%
         } else {
-            shipType = 5; // Death Star - 4% (very rare)
+            shipType = 7; // Fighter - 10%
+        }
+        
+        // Speed varies by ship type - larger/heavier ships move slower
+        let speed;
+        if (shipType === 7) {
+            speed = 3 + Math.random() * 2.5; // Fighter - fastest (3-5.5)
+        } else if (shipType === 6) {
+            speed = 2.5 + Math.random() * 2; // Rocket - fast (2.5-4.5)
+        } else if (shipType === 3) {
+            speed = 2.5 + Math.random() * 2; // Triangle UFO - fast (2.5-4.5)
+        } else if (shipType === 0) {
+            speed = 2 + Math.random() * 1.5; // Classic UFO - medium (2-3.5)
+        } else if (shipType === 1) {
+            speed = 1.5 + Math.random() * 1.5; // Shuttle - medium-slow (1.5-3)
+        } else {
+            speed = 2 + Math.random() * 2; // Default
         }
         
         // Glow colors for UFOs, engine colors for shuttles
@@ -1193,22 +1245,18 @@ function initSpaceScene() {
             [100, 255, 150], // Green
         ];
         let glowColor;
-        if (shipType === 1) {
-            glowColor = [255, 150, 50]; // Shuttle engine orange
-        } else if (shipType === 4) {
-            glowColor = [200, 220, 255]; // Endurance white-blue
-        } else if (shipType === 5) {
-            glowColor = [100, 255, 100]; // Death Star green
+        if (shipType === 1 || shipType === 6) {
+            glowColor = [255, 150, 50]; // Shuttle/Rocket engine orange
+        } else if (shipType === 7) {
+            glowColor = [255, 100, 100]; // Fighter red engines
         } else {
             glowColor = glowColors[Math.floor(Math.random() * glowColors.length)];
         }
-        
+
         // Size varies by ship type
         let baseSize;
-        if (shipType === 4) {
-            baseSize = 60 + Math.random() * 40; // Endurance - medium-large
-        } else if (shipType === 5) {
-            baseSize = 80 + Math.random() * 60; // Death Star - large
+        if (shipType === 6) {
+            baseSize = 35 + Math.random() * 30; // Rocket - smaller
         } else {
             baseSize = 40 + Math.random() * 50; // Others - normal
         }
@@ -1255,20 +1303,83 @@ function initSpaceScene() {
             };
         }
         
+        // Rocket style - some have NASA logo
+        let rocketStyle = null;
+        if (shipType === 6) {
+            rocketStyle = {
+                hasNASA: Math.random() < 0.4, // 40% chance of NASA logo
+            };
+        }
+        
+        // Calculate velocity
+        const vx = (startFromLeft ? 1 : -1) * speed;
+        const vy = (Math.random() - 0.5) * 1.5;
+        
+        // Rotation - UFO saucers stay flat, others face flight direction
+        const flightAngle = Math.atan2(vy, vx);
+        
+        // Fighters fly in formation groups of 2-6 (weighted towards smaller groups)
+        let formation = null;
+        let fighterStyle = null;
+        if (shipType === 7) {
+            // Weighted random: 2 most common, 6 least common
+            const formRoll = Math.random();
+            let formationCount;
+            if (formRoll < 0.35) formationCount = 2;      // 35%
+            else if (formRoll < 0.60) formationCount = 3; // 25%
+            else if (formRoll < 0.80) formationCount = 4; // 20%
+            else if (formRoll < 0.92) formationCount = 5; // 12%
+            else formationCount = 6;                       // 8%
+            
+            // Generate V-formation offsets (perpendicular to flight direction)
+            formation = [];
+            const spacing = 50 + Math.random() * 30; // Distance between ships - well spaced
+            for (let i = 0; i < formationCount; i++) {
+                // Alternate left/right, each row further back
+                const row = Math.floor((i + 1) / 2);
+                const side = (i % 2 === 0) ? 1 : -1;
+                if (i === 0) {
+                    formation.push({ dx: 0, dy: 0 }); // Leader at center
+                } else {
+                    formation.push({
+                        dx: -row * spacing * 0.6, // Behind leader (opposite to flight)
+                        dy: side * row * spacing  // Spread out sideways
+                    });
+                }
+            }
+            
+            // 3D banking effect - tilt in direction of movement
+            fighterStyle = {
+                bankTilt: 0.4 + Math.random() * 0.3, // How much to tilt (radians)
+            };
+        }
+        
         return {
             type: 'alienShip',
-            x: Math.cos(angle) * dist,
-            y: Math.sin(angle) * dist,
-            z: spawnZ,
+            x: startX,
+            y: startY,
+            z: startZ,
+            vx: vx,
+            vy: vy,
+            speed: speed,
             baseSize,
             shipType,
             glowColor,
             ufoStyle,
-            rotation: Math.random() * Math.PI * 2,
-            rotSpeed: shipType === 4 ? 0.015 : (Math.random() - 0.5) * 0.008, // Endurance rotates steadily
+            rocketStyle,
+            fighterStyle,
+            formation,
+            // Set rotation based on ship type and flight direction
+            // UFO saucers (0) stay level
+            // Shuttle (1), Triangle (3), Rocket (6), Fighter (7) face flight direction
+            rotation: (shipType === 0) ? 0 : 
+                      (shipType === 1 || shipType === 3 || shipType === 6 || shipType === 7) ? flightAngle + Math.PI / 2 : 
+                      flightAngle,
+            rotSpeed: 0, // No spinning - keep orientation
+            flightAngle: flightAngle, // Store for trail direction
             pulsePhase: Math.random() * Math.PI * 2,
             wobble: Math.random() * Math.PI * 2,
-            ringAngle: Math.random() * Math.PI * 2, // For Endurance ring rotation
+            ringAngle: Math.random() * Math.PI * 2,
         };
     }
 
@@ -1296,7 +1407,7 @@ function initSpaceScene() {
             const types = ['planet', 'prominentStar', 'spaceStation', 'alienShip', 'nebula'];
             type = types[Math.floor(Math.random() * types.length)];
         }
-        
+
         lastEncounterType = type;
         
         switch (type) {
@@ -1843,9 +1954,19 @@ function initSpaceScene() {
         if (enc.pulsePhase !== undefined) enc.pulsePhase += 0.015;
         if (enc.wobble !== undefined) enc.wobble += 0.01;
         if (enc.lightPhase !== undefined) enc.lightPhase += 0.025;
+        // 3D station spin - independent on each axis
+        if (enc.spinX !== undefined) enc.spinX += enc.spinSpeedX * 0.02;
+        if (enc.spinY !== undefined) enc.spinY += enc.spinSpeedY * 0.02;
+        if (enc.spinZ !== undefined) enc.spinZ += enc.spinSpeedZ * 0.02;
+        // Station drift movement
+        if (enc.driftX !== undefined) enc.x += enc.driftX;
+        if (enc.driftY !== undefined) enc.y += enc.driftY;
         if (enc.flarePhase !== undefined) enc.flarePhase += 0.008;
         if (enc.shimmerPhase !== undefined) enc.shimmerPhase += 0.015;
         if (enc.ringAngle !== undefined) enc.ringAngle += 0.012; // Endurance ring rotation
+        // Alien ships fly by with velocity
+        if (enc.vx !== undefined) enc.x += enc.vx;
+        if (enc.vy !== undefined) enc.y += enc.vy;
         
         // Update moon orbits
         if (enc.moons && enc.moons.length > 0) {
@@ -1902,7 +2023,8 @@ function initSpaceScene() {
     // Unified encounter system - handles planets, black holes, debris, stations, ships
     function drawEncounters() {
         if (!currentEncounter) return;
-        
+
+        try {
         const enc = currentEncounter;
         
         // 3D projection
@@ -1960,6 +2082,13 @@ function initSpaceScene() {
             case 'alienShip':
                 drawAlienShipEncounter(enc, x, y, size, totalFade);
                 break;
+            case 'deathStar':
+                drawDeathStarEncounter(enc, x, y, size, totalFade);
+                break;
+        }
+        } catch (e) {
+            console.error('Encounter draw error:', e);
+            currentEncounter = null;
         }
     }
 
@@ -2565,6 +2694,111 @@ function initSpaceScene() {
         ctx.fillStyle = bodyGrad;
         ctx.beginPath();
         ctx.arc(x, y, size * 0.4 * pulseIntensity, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    function drawDeathStarEncounter(ds, x, y, size, totalFade) {
+        ctx.save();
+        ctx.globalAlpha = totalFade;
+        
+        const gc = ds.glowColor || [100, 255, 100];
+        const pulseIntensity = 0.7 + Math.sin(ds.pulsePhase) * 0.3;
+        
+        // Update pulse phase
+        ds.pulsePhase += 0.02;
+        
+        // Slow rotation
+        ds.rotation += ds.rotationSpeed;
+        
+        // Main sphere body with gradient
+        const bodyGrad = ctx.createRadialGradient(
+            x - size * 0.2, y - size * 0.2, 0,
+            x, y, size * 0.5
+        );
+        bodyGrad.addColorStop(0, 'rgb(140, 145, 150)');
+        bodyGrad.addColorStop(0.4, 'rgb(100, 105, 110)');
+        bodyGrad.addColorStop(0.8, 'rgb(70, 75, 80)');
+        bodyGrad.addColorStop(1, 'rgb(50, 55, 60)');
+        ctx.fillStyle = bodyGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Equatorial trench
+        ctx.strokeStyle = 'rgb(40, 45, 50)';
+        ctx.lineWidth = size * 0.025;
+        ctx.beginPath();
+        ctx.ellipse(x, y, size * 0.5, size * 0.08, ds.rotation, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Trench detail lines
+        ctx.strokeStyle = 'rgb(60, 65, 70)';
+        ctx.lineWidth = size * 0.008;
+        ctx.beginPath();
+        ctx.ellipse(x, y - size * 0.02, size * 0.48, size * 0.06, ds.rotation, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(x, y + size * 0.02, size * 0.48, size * 0.06, ds.rotation, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Superlaser dish (concave circle in upper hemisphere)
+        const dishAngle = ds.rotation - Math.PI * 0.25;
+        const dishDist = size * 0.25;
+        const dishX = x + Math.cos(dishAngle) * dishDist;
+        const dishY = y + Math.sin(dishAngle) * dishDist * 0.5 - size * 0.1;
+
+        // Dish depression
+        ctx.fillStyle = 'rgb(50, 55, 60)';
+        ctx.beginPath();
+        ctx.arc(dishX, dishY, size * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Dish inner ring
+        ctx.strokeStyle = 'rgb(70, 75, 80)';
+        ctx.lineWidth = size * 0.015;
+        ctx.beginPath();
+        ctx.arc(dishX, dishY, size * 0.12, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Dish focusing array
+        ctx.fillStyle = 'rgb(40, 45, 50)';
+        ctx.beginPath();
+        ctx.arc(dishX, dishY, size * 0.06, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Superlaser glow (pulsing)
+        const laserGlow = ctx.createRadialGradient(dishX, dishY, 0, dishX, dishY, size * 0.12);
+        laserGlow.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.6 * pulseIntensity})`);
+        laserGlow.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.2 * pulseIntensity})`);
+        laserGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = laserGlow;
+        ctx.beginPath();
+        ctx.arc(dishX, dishY, size * 0.12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Surface detail - panel lines
+        ctx.strokeStyle = 'rgba(60, 65, 70, 0.5)';
+        ctx.lineWidth = size * 0.005;
+        for (let lat = 1; lat < 5; lat++) {
+            const latRadius = size * 0.5 * Math.sin(lat * Math.PI / 5);
+            const latY = y + size * 0.5 * Math.cos(lat * Math.PI / 5);
+            ctx.beginPath();
+            ctx.ellipse(x, latY, latRadius, latRadius * 0.15, ds.rotation, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Surface highlight
+        const highlightGrad = ctx.createRadialGradient(
+            x - size * 0.25, y - size * 0.25, 0,
+            x - size * 0.15, y - size * 0.15, size * 0.3
+        );
+        highlightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+        highlightGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = highlightGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
         ctx.fill();
         
         ctx.restore();
@@ -3565,105 +3799,585 @@ function initSpaceScene() {
         ctx.save();
         ctx.globalAlpha = totalFade;
         ctx.translate(x, y);
-        ctx.rotate(enc.rotation);
-        
+
         const pc = enc.primaryColor;
         const ac = enc.accentColor;
         const lightOn = Math.sin(enc.lightPhase) > 0;
         
-        if (enc.stationType === 0) {
-            // Linear station - modules in a row
-            for (let i = 0; i < enc.moduleCount; i++) {
-                const mx = (i - enc.moduleCount / 2) * size * 0.4;
-                ctx.fillStyle = `rgb(${pc[0]}, ${pc[1]}, ${pc[2]})`;
-                ctx.fillRect(mx - size * 0.12, -size * 0.15, size * 0.24, size * 0.3);
-                
-                // Windows
-                ctx.fillStyle = lightOn ? `rgba(255, 255, 200, 0.8)` : `rgba(50, 60, 80, 0.8)`;
-                ctx.fillRect(mx - size * 0.06, -size * 0.08, size * 0.04, size * 0.04);
-                ctx.fillRect(mx + size * 0.02, -size * 0.08, size * 0.04, size * 0.04);
-            }
-            // Connecting tubes
-            ctx.fillStyle = `rgb(${pc[0] - 20}, ${pc[1] - 20}, ${pc[2] - 20})`;
-            ctx.fillRect(-size * 0.5, -size * 0.03, size, size * 0.06);
-        } else if (enc.stationType === 1) {
-            // Circular station
-            ctx.strokeStyle = `rgb(${pc[0]}, ${pc[1]}, ${pc[2]})`;
-            ctx.lineWidth = size * 0.08;
-            ctx.beginPath();
-            ctx.arc(0, 0, size * 0.4, 0, Math.PI * 2);
-            ctx.stroke();
+        // 3D rotation - independent spin on each axis
+        const rotX = enc.spinX || 0;
+        const rotY = enc.spinY || 0;
+        const rotZ = enc.spinZ || 0;
+        
+        // Helper: project 3D point to 2D with perspective
+        const project3D = (px, py, pz) => {
+            let rx = px, ry = py, rz = pz;
+            let tx, ty, tz;
             
-            // Hub
-            ctx.fillStyle = `rgb(${pc[0]}, ${pc[1]}, ${pc[2]})`;
+            // Rotate around X axis
+            const cosX = Math.cos(rotX);
+            const sinX = Math.sin(rotX);
+            ty = ry * cosX - rz * sinX;
+            tz = ry * sinX + rz * cosX;
+            ry = ty;
+            rz = tz;
+            
+            // Rotate around Y axis
+            const cosY = Math.cos(rotY);
+            const sinY = Math.sin(rotY);
+            tx = rx * cosY + rz * sinY;
+            tz = -rx * sinY + rz * cosY;
+            rx = tx;
+            rz = tz;
+            
+            // Rotate around Z axis
+            const cosZ = Math.cos(rotZ);
+            const sinZ = Math.sin(rotZ);
+            tx = rx * cosZ - ry * sinZ;
+            ty = rx * sinZ + ry * cosZ;
+            rx = tx;
+            ry = ty;
+            
+            // Perspective
+            const perspective = 300;
+            const scale = perspective / (perspective + rz);
+            
+            return {
+                x: rx * scale,
+                y: ry * scale,
+                z: rz,
+                scale: scale
+            };
+        };
+        
+        // Helper: draw 3D box
+        const draw3DBox = (cx, cy, cz, w, h, d, color, lightColor, darkColor) => {
+            const vertices = [
+                // Front face
+                { x: cx - w/2, y: cy - h/2, z: cz + d/2 },
+                { x: cx + w/2, y: cy - h/2, z: cz + d/2 },
+                { x: cx + w/2, y: cy + h/2, z: cz + d/2 },
+                { x: cx - w/2, y: cy + h/2, z: cz + d/2 },
+                // Back face
+                { x: cx - w/2, y: cy - h/2, z: cz - d/2 },
+                { x: cx + w/2, y: cy - h/2, z: cz - d/2 },
+                { x: cx + w/2, y: cy + h/2, z: cz - d/2 },
+                { x: cx - w/2, y: cy + h/2, z: cz - d/2 },
+            ];
+            
+            const projected = vertices.map(v => project3D(v.x, v.y, v.z));
+            
+            // Define faces with their vertices and colors based on facing direction
+            const faces = [
+                { verts: [0, 1, 2, 3], normal: { z: 1 }, color: color },      // Front
+                { verts: [5, 4, 7, 6], normal: { z: -1 }, color: darkColor }, // Back
+                { verts: [4, 0, 3, 7], normal: { x: -1 }, color: darkColor }, // Left
+                { verts: [1, 5, 6, 2], normal: { x: 1 }, color: lightColor }, // Right
+                { verts: [4, 5, 1, 0], normal: { y: -1 }, color: lightColor }, // Top
+                { verts: [3, 2, 6, 7], normal: { y: 1 }, color: darkColor },  // Bottom
+            ];
+            
+            // Sort faces by average z depth
+            faces.sort((a, b) => {
+                const avgZa = a.verts.reduce((sum, i) => sum + projected[i].z, 0) / 4;
+                const avgZb = b.verts.reduce((sum, i) => sum + projected[i].z, 0) / 4;
+                return avgZb - avgZa;
+            });
+            
+            // Draw faces
+            faces.forEach(face => {
+                ctx.fillStyle = `rgb(${face.color[0]}, ${face.color[1]}, ${face.color[2]})`;
+                ctx.beginPath();
+                ctx.moveTo(projected[face.verts[0]].x, projected[face.verts[0]].y);
+                for (let i = 1; i < face.verts.length; i++) {
+                    ctx.lineTo(projected[face.verts[i]].x, projected[face.verts[i]].y);
+                }
+                ctx.closePath();
+                ctx.fill();
+            });
+        };
+        
+        // Helper: draw 3D cylinder (for circular station ring)
+        const draw3DCylinder = (radius, thickness, segments, color, lightColor) => {
+            const points = [];
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                points.push({
+                    outerX: Math.cos(angle) * radius,
+                    outerZ: Math.sin(angle) * radius,
+                    innerX: Math.cos(angle) * (radius - thickness),
+                    innerZ: Math.sin(angle) * (radius - thickness)
+                });
+            }
+            
+            // Draw ring segments
+            for (let i = 0; i < segments; i++) {
+                const p1 = points[i];
+                const p2 = points[i + 1];
+                
+                // Outer surface
+                const o1 = project3D(p1.outerX, -thickness/2, p1.outerZ);
+                const o2 = project3D(p2.outerX, -thickness/2, p2.outerZ);
+                const o3 = project3D(p2.outerX, thickness/2, p2.outerZ);
+                const o4 = project3D(p1.outerX, thickness/2, p1.outerZ);
+                
+                // Color based on facing direction
+                const midZ = (p1.outerZ + p2.outerZ) / 2;
+                const facing = midZ > 0 ? lightColor : color;
+                
+                ctx.fillStyle = `rgb(${facing[0]}, ${facing[1]}, ${facing[2]})`;
+                ctx.beginPath();
+                ctx.moveTo(o1.x, o1.y);
+                ctx.lineTo(o2.x, o2.y);
+                ctx.lineTo(o3.x, o3.y);
+                ctx.lineTo(o4.x, o4.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+        };
+
+        if (enc.stationType === 0) {
+            // Linear station - 3D modules in a row
+            const moduleSpacing = size * 0.35;
+            const moduleW = size * 0.2;
+            const moduleH = size * 0.25;
+            const moduleD = size * 0.2;
+            
+            // Connecting tube (draw first, behind)
+            draw3DBox(0, 0, 0, size * 0.9, size * 0.06, size * 0.06,
+                [pc[0] - 30, pc[1] - 30, pc[2] - 30],
+                [pc[0] - 20, pc[1] - 20, pc[2] - 20],
+                [pc[0] - 50, pc[1] - 50, pc[2] - 50]);
+            
+            // Modules
+            for (let i = 0; i < enc.moduleCount; i++) {
+                const mx = (i - (enc.moduleCount - 1) / 2) * moduleSpacing;
+                draw3DBox(mx, 0, 0, moduleW, moduleH, moduleD,
+                    pc,
+                    [Math.min(255, pc[0] + 30), Math.min(255, pc[1] + 30), Math.min(255, pc[2] + 30)],
+                    [pc[0] - 40, pc[1] - 40, pc[2] - 40]);
+                
+                // Windows on front face
+                if (Math.cos(rotY) > 0.3) {
+                    const wp = project3D(mx, 0, moduleD/2 + 1);
+                    ctx.fillStyle = lightOn ? 'rgba(255, 255, 200, 0.9)' : 'rgba(50, 80, 120, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(wp.x, wp.y, size * 0.025 * wp.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+        } else if (enc.stationType === 1) {
+            // Circular station - 3D ring
+            const ringRadius = size * 0.4;
+            const ringThickness = size * 0.08;
+            
+            draw3DCylinder(ringRadius, ringThickness, 24, pc,
+                [Math.min(255, pc[0] + 25), Math.min(255, pc[1] + 25), Math.min(255, pc[2] + 25)]);
+            
+            // Central hub (sphere-like)
+            const hubP = project3D(0, 0, 0);
+            const hubGrad = ctx.createRadialGradient(
+                hubP.x - size * 0.03, hubP.y - size * 0.03, 0,
+                hubP.x, hubP.y, size * 0.15 * hubP.scale
+            );
+            hubGrad.addColorStop(0, `rgb(${Math.min(255, pc[0] + 40)}, ${Math.min(255, pc[1] + 40)}, ${Math.min(255, pc[2] + 40)})`);
+            hubGrad.addColorStop(0.7, `rgb(${pc[0]}, ${pc[1]}, ${pc[2]})`);
+            hubGrad.addColorStop(1, `rgb(${pc[0] - 30}, ${pc[1] - 30}, ${pc[2] - 30})`);
+            ctx.fillStyle = hubGrad;
             ctx.beginPath();
-            ctx.arc(0, 0, size * 0.15, 0, Math.PI * 2);
+            ctx.arc(hubP.x, hubP.y, size * 0.15 * hubP.scale, 0, Math.PI * 2);
             ctx.fill();
             
             // Spokes
             for (let i = 0; i < 4; i++) {
-                const angle = (i / 4) * Math.PI * 2;
-                ctx.strokeStyle = `rgb(${pc[0] - 20}, ${pc[1] - 20}, ${pc[2] - 20})`;
-                ctx.lineWidth = size * 0.04;
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.lineTo(Math.cos(angle) * size * 0.4, Math.sin(angle) * size * 0.4);
-                ctx.stroke();
+                const spokeAngle = (i / 4) * Math.PI * 2;
+                const sx = Math.cos(spokeAngle) * ringRadius * 0.9;
+                const sz = Math.sin(spokeAngle) * ringRadius * 0.9;
+                draw3DBox(sx / 2, 0, sz / 2, 
+                    Math.abs(sx) > Math.abs(sz) ? Math.abs(sx) : size * 0.04,
+                    size * 0.04,
+                    Math.abs(sz) > Math.abs(sx) ? Math.abs(sz) : size * 0.04,
+                    [pc[0] - 20, pc[1] - 20, pc[2] - 20],
+                    pc,
+                    [pc[0] - 40, pc[1] - 40, pc[2] - 40]);
             }
-        } else {
-            // Cross station
-            ctx.fillStyle = `rgb(${pc[0]}, ${pc[1]}, ${pc[2]})`;
-            ctx.fillRect(-size * 0.5, -size * 0.1, size, size * 0.2);
-            ctx.fillRect(-size * 0.1, -size * 0.5, size * 0.2, size);
             
-            // Center hub
+        } else if (enc.stationType === 2) {
+            // Cross station - 3D
+            const armLength = size * 0.45;
+            const armThick = size * 0.12;
+
+            // Horizontal arm
+            draw3DBox(0, 0, 0, armLength * 2, armThick, armThick,
+                pc,
+                [Math.min(255, pc[0] + 25), Math.min(255, pc[1] + 25), Math.min(255, pc[2] + 25)],
+                [pc[0] - 35, pc[1] - 35, pc[2] - 35]);
+
+            // Vertical arm
+            draw3DBox(0, 0, 0, armThick, armLength * 2, armThick,
+                pc,
+                [Math.min(255, pc[0] + 25), Math.min(255, pc[1] + 25), Math.min(255, pc[2] + 25)],
+                [pc[0] - 35, pc[1] - 35, pc[2] - 35]);
+
+            // Center hub (sphere)
+            const hubP = project3D(0, 0, 0);
+            const hubGrad = ctx.createRadialGradient(
+                hubP.x - size * 0.04, hubP.y - size * 0.04, 0,
+                hubP.x, hubP.y, size * 0.18 * hubP.scale
+            );
+            hubGrad.addColorStop(0, `rgb(${Math.min(255, pc[0] + 50)}, ${Math.min(255, pc[1] + 50)}, ${Math.min(255, pc[2] + 50)})`);
+            hubGrad.addColorStop(0.6, `rgb(${pc[0]}, ${pc[1]}, ${pc[2]})`);
+            hubGrad.addColorStop(1, `rgb(${pc[0] - 30}, ${pc[1] - 30}, ${pc[2] - 30})`);
+            ctx.fillStyle = hubGrad;
             ctx.beginPath();
-            ctx.arc(0, 0, size * 0.15, 0, Math.PI * 2);
+            ctx.arc(hubP.x, hubP.y, size * 0.18 * hubP.scale, 0, Math.PI * 2);
             ctx.fill();
-        }
-        
-        // Solar panels
-        if (enc.hasSolarPanels) {
-            ctx.fillStyle = `rgba(40, 60, 120, 0.9)`;
-            ctx.fillRect(-size * 0.7, -size * 0.02, size * 0.15, size * 0.35);
-            ctx.fillRect(size * 0.55, -size * 0.02, size * 0.15, size * 0.35);
-            // Panel lines
-            ctx.strokeStyle = `rgba(100, 120, 160, 0.5)`;
-            ctx.lineWidth = 1;
-            for (let i = 0; i < 4; i++) {
-                const ly = i * size * 0.08;
-                ctx.beginPath();
-                ctx.moveTo(-size * 0.7, ly);
-                ctx.lineTo(-size * 0.55, ly);
-                ctx.moveTo(size * 0.55, ly);
-                ctx.lineTo(size * 0.7, ly);
-                ctx.stroke();
-            }
-        }
-        
-        // Antenna
-        if (enc.hasAntenna) {
-            ctx.strokeStyle = `rgb(${pc[0] + 20}, ${pc[1] + 20}, ${pc[2] + 20})`;
+            
+        } else if (enc.stationType === 3) {
+            // Hubble-style telescope - cylindrical body with solar panels
+            const bodyLength = size * 0.7;
+            const bodyRadius = size * 0.15;
+            
+            // Main cylindrical body (draw as elongated box for simplicity)
+            draw3DBox(0, 0, 0, bodyRadius * 2, bodyLength, bodyRadius * 2,
+                [200, 200, 210],
+                [230, 230, 240],
+                [150, 150, 160]);
+            
+            // Aperture door (front)
+            const aperture = project3D(0, -bodyLength * 0.5, 0);
+            ctx.fillStyle = '#1a1a2e';
+            ctx.beginPath();
+            ctx.arc(aperture.x, aperture.y, bodyRadius * aperture.scale, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner aperture ring
+            ctx.strokeStyle = '#3a3a5e';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(0, -size * 0.3);
-            ctx.lineTo(0, -size * 0.6);
+            ctx.arc(aperture.x, aperture.y, bodyRadius * 0.7 * aperture.scale, 0, Math.PI * 2);
             ctx.stroke();
+            
+            // Solar panel arrays (large rectangular)
+            const panelW = size * 0.08;
+            const panelH = size * 0.5;
+            const panelD = size * 0.02;
+            
+            draw3DBox(-size * 0.35, 0, 0, panelW, panelH, panelD,
+                [30, 50, 120],
+                [50, 80, 160],
+                [20, 35, 80]);
+            draw3DBox(size * 0.35, 0, 0, panelW, panelH, panelD,
+                [30, 50, 120],
+                [50, 80, 160],
+                [20, 35, 80]);
+            
+            // Communication antenna
+            const antennaBase = project3D(0, bodyLength * 0.35, bodyRadius);
+            const antennaTip = project3D(0, bodyLength * 0.35, bodyRadius + size * 0.2);
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(antennaBase.x, antennaBase.y);
+            ctx.lineTo(antennaTip.x, antennaTip.y);
+            ctx.stroke();
+            
             // Dish
             ctx.beginPath();
-            ctx.arc(0, -size * 0.6, size * 0.08, Math.PI, Math.PI * 2);
+            ctx.arc(antennaTip.x, antennaTip.y, size * 0.05 * antennaTip.scale, 0, Math.PI * 2);
             ctx.stroke();
-        }
-        
-        // Blinking lights
-        if (lightOn) {
-            ctx.fillStyle = 'rgba(255, 100, 100, 0.8)';
+            
+        } else if (enc.stationType === 4) {
+            // James Webb-style telescope - hexagonal mirror with sunshield
+            const mirrorSize = size * 0.4;
+            
+            // Sunshield (diamond/kite shape behind)
+            const shieldPoints = [
+                project3D(0, -size * 0.3, -size * 0.1),
+                project3D(-size * 0.5, size * 0.1, -size * 0.1),
+                project3D(0, size * 0.5, -size * 0.1),
+                project3D(size * 0.5, size * 0.1, -size * 0.1),
+            ];
+            
+            // Multiple layers of sunshield
+            for (let layer = 0; layer < 3; layer++) {
+                const layerZ = -size * 0.1 - layer * size * 0.03;
+                const layerScale = 1 - layer * 0.08;
+                const layerPoints = [
+                    project3D(0, -size * 0.3 * layerScale, layerZ),
+                    project3D(-size * 0.5 * layerScale, size * 0.1 * layerScale, layerZ),
+                    project3D(0, size * 0.5 * layerScale, layerZ),
+                    project3D(size * 0.5 * layerScale, size * 0.1 * layerScale, layerZ),
+                ];
+                
+                const shieldColor = layer === 0 ? [220, 180, 100] : layer === 1 ? [200, 160, 80] : [180, 140, 60];
+                ctx.fillStyle = `rgba(${shieldColor[0]}, ${shieldColor[1]}, ${shieldColor[2]}, 0.8)`;
+                ctx.beginPath();
+                ctx.moveTo(layerPoints[0].x, layerPoints[0].y);
+                for (let i = 1; i < layerPoints.length; i++) {
+                    ctx.lineTo(layerPoints[i].x, layerPoints[i].y);
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // Hexagonal primary mirror (front)
+            const hexSegments = 18; // 18 hexagonal segments like JWST
+            const segmentSize = mirrorSize * 0.2;
+            
+            // Draw hexagonal mirror segments
+            const hexOffsets = [
+                {x: 0, y: 0}, // center
+                {x: 1.5, y: 0}, {x: -1.5, y: 0}, // sides
+                {x: 0.75, y: 1.3}, {x: -0.75, y: 1.3}, // top
+                {x: 0.75, y: -1.3}, {x: -0.75, y: -1.3}, // bottom
+                {x: 1.5, y: 1.3}, {x: -1.5, y: 1.3},
+                {x: 1.5, y: -1.3}, {x: -1.5, y: -1.3},
+                {x: 2.25, y: 0.65}, {x: -2.25, y: 0.65},
+                {x: 2.25, y: -0.65}, {x: -2.25, y: -0.65},
+                {x: 0, y: 2.6}, {x: 0, y: -2.6},
+                {x: 3, y: 0},
+            ];
+            
+            for (let seg = 0; seg < Math.min(hexOffsets.length, hexSegments); seg++) {
+                const hx = hexOffsets[seg].x * segmentSize * 0.6;
+                const hy = hexOffsets[seg].y * segmentSize * 0.5;
+                const segCenter = project3D(hx, hy, size * 0.05);
+                
+                // Gold mirror color - use segment index for consistent shading
+                const goldShade = 180 + (seg * 7) % 40;
+                ctx.fillStyle = `rgb(${goldShade}, ${goldShade - 40}, ${Math.max(0, goldShade - 100)})`;
+                
+                // Draw hexagon
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2 - Math.PI / 6;
+                    const px = segCenter.x + Math.cos(angle) * segmentSize * 0.28 * segCenter.scale;
+                    const py = segCenter.y + Math.sin(angle) * segmentSize * 0.28 * segCenter.scale;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                // Segment border
+                ctx.strokeStyle = 'rgba(100, 80, 40, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+            
+            // Secondary mirror support struts
+            const strutEnd = project3D(0, 0, size * 0.25);
+            ctx.strokeStyle = '#888888';
+            ctx.lineWidth = 2;
+            
+            const strutBases = [
+                project3D(-mirrorSize * 0.4, -mirrorSize * 0.2, size * 0.05),
+                project3D(mirrorSize * 0.4, -mirrorSize * 0.2, size * 0.05),
+                project3D(0, mirrorSize * 0.35, size * 0.05),
+            ];
+            
+            strutBases.forEach(base => {
+                ctx.beginPath();
+                ctx.moveTo(base.x, base.y);
+                ctx.lineTo(strutEnd.x, strutEnd.y);
+                ctx.stroke();
+            });
+            
+            // Secondary mirror
+            ctx.fillStyle = '#333344';
             ctx.beginPath();
-            ctx.arc(size * 0.3, -size * 0.2, size * 0.02, 0, Math.PI * 2);
-            ctx.arc(-size * 0.3, -size * 0.2, size * 0.02, 0, Math.PI * 2);
+            ctx.arc(strutEnd.x, strutEnd.y, size * 0.04 * strutEnd.scale, 0, Math.PI * 2);
+            ctx.fill();
+            
+        } else if (enc.stationType === 5) {
+            // Satellite (type 5) - solar panels and body with 3D rotation
+            const pulseIntensity = 0.5 + Math.sin(enc.lightPhase) * 0.5;
+
+            // Solar panel glow
+            ctx.fillStyle = `rgba(100, 150, 255, ${0.3 * pulseIntensity})`;
+            const panelGlowL = project3D(-size * 0.35, 0, 0);
+            const panelGlowR = project3D(size * 0.35, 0, 0);
+            ctx.beginPath();
+            ctx.arc(panelGlowL.x, panelGlowL.y, size * 0.2 * panelGlowL.scale, 0, Math.PI * 2);
+            ctx.arc(panelGlowR.x, panelGlowR.y, size * 0.2 * panelGlowR.scale, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Solar panels (3D boxes)
+            draw3DBox(-size * 0.35, 0, 0, size * 0.25, size * 0.08, size * 0.02,
+                [30, 50, 100], [50, 70, 130], [20, 35, 70]);
+            draw3DBox(size * 0.35, 0, 0, size * 0.25, size * 0.08, size * 0.02,
+                [30, 50, 100], [50, 70, 130], [20, 35, 70]);
+
+            // Panel grid lines
+            ctx.strokeStyle = 'rgba(80, 110, 180, 0.6)';
+            ctx.lineWidth = 1;
+            for (let i = -2; i <= 2; i++) {
+                const lineL = project3D(-size * 0.35 + i * size * 0.05, 0, size * 0.02);
+                ctx.beginPath();
+                ctx.moveTo(lineL.x, lineL.y - size * 0.03 * lineL.scale);
+                ctx.lineTo(lineL.x, lineL.y + size * 0.03 * lineL.scale);
+                ctx.stroke();
+                const lineR = project3D(size * 0.35 + i * size * 0.05, 0, size * 0.02);
+                ctx.beginPath();
+                ctx.moveTo(lineR.x, lineR.y - size * 0.03 * lineR.scale);
+                ctx.lineTo(lineR.x, lineR.y + size * 0.03 * lineR.scale);
+                ctx.stroke();
+            }
+
+            // Main body (3D box - gold thermal blanket)
+            draw3DBox(0, 0, 0, size * 0.1, size * 0.15, size * 0.1,
+                [200, 180, 100], [230, 210, 130], [150, 130, 70]);
+
+            // Antenna dish
+            const dishCenter = project3D(0, -size * 0.15, 0);
+            const dishTop = project3D(0, -size * 0.22, 0);
+            ctx.strokeStyle = 'rgb(180, 180, 190)';
+            ctx.lineWidth = 2 * dishCenter.scale;
+            ctx.beginPath();
+            ctx.arc(dishCenter.x, dishCenter.y - size * 0.05 * dishCenter.scale, size * 0.04 * dishCenter.scale, Math.PI, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(dishCenter.x, dishCenter.y);
+            ctx.lineTo(dishTop.x, dishTop.y);
+            ctx.stroke();
+            
+        } else {
+            // Endurance (type 6) - rotating ring station with 3D projection
+            const pulseIntensity = 0.5 + Math.sin(enc.lightPhase) * 0.5;
+            const gc = [200, 220, 255]; // White-blue glow
+            
+            // Central hub with 3D projection
+            const hubP = project3D(0, 0, 0);
+            const hubGrad = ctx.createRadialGradient(hubP.x, hubP.y, 0, hubP.x, hubP.y, size * 0.12 * hubP.scale);
+            hubGrad.addColorStop(0, 'rgb(180, 185, 195)');
+            hubGrad.addColorStop(0.5, 'rgb(140, 145, 155)');
+            hubGrad.addColorStop(1, 'rgb(100, 105, 115)');
+            ctx.fillStyle = hubGrad;
+            ctx.beginPath();
+            ctx.arc(hubP.x, hubP.y, size * 0.12 * hubP.scale, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main rotating ring - draw as ellipse points with 3D projection
+            ctx.strokeStyle = 'rgb(160, 165, 175)';
+            ctx.lineWidth = size * 0.05;
+            ctx.beginPath();
+            for (let a = 0; a <= Math.PI * 2; a += 0.1) {
+                const rx = Math.cos(a) * size * 0.45;
+                const ry = Math.sin(a) * size * 0.15;
+                const rp = project3D(rx, ry, 0);
+                if (a === 0) ctx.moveTo(rp.x, rp.y);
+                else ctx.lineTo(rp.x, rp.y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+            
+            // Modules on the ring (12 modules)
+            for (let m = 0; m < 12; m++) {
+                const modAngle = (m / 12) * Math.PI * 2;
+                const modX = Math.cos(modAngle) * size * 0.45;
+                const modY = Math.sin(modAngle) * size * 0.15;
+                const modP = project3D(modX, modY, 0);
+                
+                // Module body
+                ctx.fillStyle = 'rgb(140, 145, 155)';
+                ctx.beginPath();
+                ctx.arc(modP.x, modP.y, size * 0.035 * modP.scale, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Module window light
+                const windowBrightness = Math.sin(enc.lightPhase + m * 0.5) * 0.3 + 0.7;
+                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${windowBrightness * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(modP.x, modP.y, size * 0.012 * modP.scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Connecting spokes
+            ctx.strokeStyle = 'rgb(120, 125, 135)';
+            ctx.lineWidth = size * 0.01;
+            for (let s = 0; s < 4; s++) {
+                const spokeAngle = (s / 4) * Math.PI * 2;
+                const endX = Math.cos(spokeAngle) * size * 0.42;
+                const endY = Math.sin(spokeAngle) * size * 0.14;
+                const endP = project3D(endX, endY, 0);
+                ctx.beginPath();
+                ctx.moveTo(hubP.x, hubP.y);
+                ctx.lineTo(endP.x, endP.y);
+                ctx.stroke();
+            }
+            
+            // Hub detail - docking port
+            ctx.fillStyle = 'rgb(80, 85, 95)';
+            ctx.beginPath();
+            ctx.arc(hubP.x, hubP.y, size * 0.04 * hubP.scale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${pulseIntensity * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(hubP.x, hubP.y, size * 0.02 * hubP.scale, 0, Math.PI * 2);
             ctx.fill();
         }
-        
+
+        // Solar panels (3D) - not for satellite or endurance which have their own
+        if (enc.hasSolarPanels && enc.stationType !== 5 && enc.stationType !== 6) {
+            const panelW = size * 0.12;
+            const panelH = size * 0.35;
+            const panelD = size * 0.02;
+            const panelOffset = size * 0.6;
+            
+            // Left panel
+            draw3DBox(-panelOffset, size * 0.1, 0, panelW, panelH, panelD,
+                [40, 60, 130],
+                [60, 90, 170],
+                [25, 40, 90]);
+            
+            // Right panel
+            draw3DBox(panelOffset, size * 0.1, 0, panelW, panelH, panelD,
+                [40, 60, 130],
+                [60, 90, 170],
+                [25, 40, 90]);
+        }
+
+        // Antenna - not for satellite or endurance which have their own
+        if (enc.hasAntenna && enc.stationType !== 5 && enc.stationType !== 6) {
+            const antennaBase = project3D(0, -size * 0.3, 0);
+            const antennaTip = project3D(0, -size * 0.55, 0);
+            const dishCenter = project3D(0, -size * 0.55, 0);
+            
+            ctx.strokeStyle = `rgb(${pc[0] + 30}, ${pc[1] + 30}, ${pc[2] + 30})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(antennaBase.x, antennaBase.y);
+            ctx.lineTo(antennaTip.x, antennaTip.y);
+            ctx.stroke();
+            
+            // Dish
+            ctx.beginPath();
+            ctx.arc(dishCenter.x, dishCenter.y, size * 0.07 * dishCenter.scale, Math.PI, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Blinking lights
+        if (lightOn) {
+            const light1 = project3D(size * 0.25, -size * 0.15, size * 0.1);
+            const light2 = project3D(-size * 0.25, -size * 0.15, -size * 0.1);
+            
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
+            ctx.beginPath();
+            ctx.arc(light1.x, light1.y, size * 0.025 * light1.scale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(light2.x, light2.y, size * 0.025 * light2.scale, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Light glow
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.3)';
+            ctx.beginPath();
+            ctx.arc(light1.x, light1.y, size * 0.05 * light1.scale, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         ctx.restore();
     }
 
@@ -3673,11 +4387,11 @@ function initSpaceScene() {
         ctx.globalAlpha = totalFade;
         ctx.translate(x, y);
         ctx.rotate(enc.rotation);
-        
+
         const gc = enc.glowColor;
         const pulseIntensity = 0.5 + Math.sin(enc.pulsePhase) * 0.5;
         const wobbleOffset = Math.sin(enc.wobble) * size * 0.05;
-        
+
         if (enc.shipType === 0) {
             // UFO saucer with variance
             const ufo = enc.ufoStyle || {
@@ -4063,177 +4777,192 @@ function initSpaceScene() {
                 ctx.arc(corner[0], corner[1], size * 0.025, 0, Math.PI * 2);
                 ctx.fill();
             });
-            
-        } else if (enc.shipType === 4) {
-            // Interstellar Endurance - rotating ring station
-            const ringAngle = enc.ringAngle || enc.rotation;
-            
-            // Central hub
-            const hubGrad = ctx.createRadialGradient(0, wobbleOffset, 0, 0, wobbleOffset, size * 0.15);
-            hubGrad.addColorStop(0, 'rgb(180, 185, 195)');
-            hubGrad.addColorStop(0.5, 'rgb(140, 145, 155)');
-            hubGrad.addColorStop(1, 'rgb(100, 105, 115)');
-            ctx.fillStyle = hubGrad;
+
+        } else if (enc.shipType === 6) {
+            // Classic Rocket - pointed nose, cylindrical body, fins
+            const rs = enc.rocketStyle || { hasNASA: false };
+
+            // Engine glow
+            const engineGlow = ctx.createRadialGradient(0, wobbleOffset + size * 0.5, 0, 0, wobbleOffset + size * 0.5, size * 0.3);
+            engineGlow.addColorStop(0, `rgba(255, 200, 100, ${0.8 * pulseIntensity})`);
+            engineGlow.addColorStop(0.4, `rgba(255, 100, 50, ${0.4 * pulseIntensity})`);
+            engineGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = engineGlow;
             ctx.beginPath();
-            ctx.arc(0, wobbleOffset, size * 0.12, 0, Math.PI * 2);
+            ctx.arc(0, wobbleOffset + size * 0.5, size * 0.3, 0, Math.PI * 2);
             ctx.fill();
-            
-            // Main rotating ring
-            ctx.strokeStyle = 'rgb(160, 165, 175)';
-            ctx.lineWidth = size * 0.06;
-            ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset, size * 0.45, size * 0.45 * 0.3, ringAngle, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            // Ring highlight
-            ctx.strokeStyle = 'rgba(200, 205, 215, 0.6)';
-            ctx.lineWidth = size * 0.02;
-            ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset, size * 0.45, size * 0.45 * 0.3, ringAngle, Math.PI * 0.8, Math.PI * 1.2);
-            ctx.stroke();
-            
-            // Ring shadow
-            ctx.strokeStyle = 'rgba(60, 65, 75, 0.5)';
-            ctx.lineWidth = size * 0.03;
-            ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset, size * 0.45, size * 0.45 * 0.3, ringAngle, Math.PI * 1.8, Math.PI * 2.2);
-            ctx.stroke();
-            
-            // Modules on the ring (12 modules)
-            const moduleCount = 12;
-            for (let m = 0; m < moduleCount; m++) {
-                const modAngle = (m / moduleCount) * Math.PI * 2 + ringAngle;
-                const modX = Math.cos(modAngle) * size * 0.45;
-                const modY = Math.sin(modAngle) * size * 0.45 * 0.3 + wobbleOffset;
-                
-                // Module body
-                ctx.fillStyle = 'rgb(140, 145, 155)';
-                ctx.beginPath();
-                ctx.arc(modX, modY, size * 0.04, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Module window light
-                const windowBrightness = Math.sin(enc.pulsePhase + m * 0.5) * 0.3 + 0.7;
-                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${windowBrightness * 0.6})`;
-                ctx.beginPath();
-                ctx.arc(modX, modY, size * 0.015, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // Connecting spokes
-            ctx.strokeStyle = 'rgb(120, 125, 135)';
-            ctx.lineWidth = size * 0.012;
-            for (let s = 0; s < 4; s++) {
-                const spokeAngle = (s / 4) * Math.PI * 2 + ringAngle;
-                const endX = Math.cos(spokeAngle) * size * 0.42;
-                const endY = Math.sin(spokeAngle) * size * 0.42 * 0.3 + wobbleOffset;
-                ctx.beginPath();
-                ctx.moveTo(0, wobbleOffset);
-                ctx.lineTo(endX, endY);
-                ctx.stroke();
-            }
-            
-            // Hub detail - docking port
-            ctx.fillStyle = 'rgb(80, 85, 95)';
-            ctx.beginPath();
-            ctx.arc(0, wobbleOffset, size * 0.04, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${pulseIntensity * 0.5})`;
-            ctx.beginPath();
-            ctx.arc(0, wobbleOffset, size * 0.02, 0, Math.PI * 2);
-            ctx.fill();
-            
-        } else if (enc.shipType === 5) {
-            // Death Star - large spherical battle station
-            
-            // Main sphere body with gradient
-            const bodyGrad = ctx.createRadialGradient(
-                -size * 0.2, wobbleOffset - size * 0.2, 0,
-                0, wobbleOffset, size * 0.5
-            );
-            bodyGrad.addColorStop(0, 'rgb(140, 145, 150)');
-            bodyGrad.addColorStop(0.4, 'rgb(100, 105, 110)');
-            bodyGrad.addColorStop(0.8, 'rgb(70, 75, 80)');
-            bodyGrad.addColorStop(1, 'rgb(50, 55, 60)');
+
+            // Main body (cylindrical)
+            const bodyGrad = ctx.createLinearGradient(-size * 0.1, 0, size * 0.1, 0);
+            bodyGrad.addColorStop(0, 'rgb(200, 200, 205)');
+            bodyGrad.addColorStop(0.3, 'rgb(250, 250, 255)');
+            bodyGrad.addColorStop(0.7, 'rgb(230, 230, 235)');
+            bodyGrad.addColorStop(1, 'rgb(180, 180, 185)');
             ctx.fillStyle = bodyGrad;
             ctx.beginPath();
-            ctx.arc(0, wobbleOffset, size * 0.5, 0, Math.PI * 2);
+            ctx.moveTo(0, wobbleOffset - size * 0.5); // Nose tip
+            ctx.quadraticCurveTo(size * 0.12, wobbleOffset - size * 0.35, size * 0.1, wobbleOffset);
+            ctx.lineTo(size * 0.1, wobbleOffset + size * 0.35);
+            ctx.lineTo(-size * 0.1, wobbleOffset + size * 0.35);
+            ctx.lineTo(-size * 0.1, wobbleOffset);
+            ctx.quadraticCurveTo(-size * 0.12, wobbleOffset - size * 0.35, 0, wobbleOffset - size * 0.5);
             ctx.fill();
-            
-            // Equatorial trench
-            ctx.strokeStyle = 'rgb(40, 45, 50)';
-            ctx.lineWidth = size * 0.025;
-            ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset, size * 0.5, size * 0.08, 0, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            // Trench detail lines
-            ctx.strokeStyle = 'rgb(60, 65, 70)';
-            ctx.lineWidth = size * 0.008;
-            ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset - size * 0.02, size * 0.48, size * 0.06, 0, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset + size * 0.02, size * 0.48, size * 0.06, 0, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            // Superlaser dish (concave circle in upper hemisphere)
-            const dishX = -size * 0.15;
-            const dishY = wobbleOffset - size * 0.2;
-            
-            // Dish depression
-            ctx.fillStyle = 'rgb(50, 55, 60)';
-            ctx.beginPath();
-            ctx.arc(dishX, dishY, size * 0.15, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Dish inner ring
-            ctx.strokeStyle = 'rgb(70, 75, 80)';
-            ctx.lineWidth = size * 0.015;
-            ctx.beginPath();
-            ctx.arc(dishX, dishY, size * 0.12, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            // Dish focusing array
-            ctx.fillStyle = 'rgb(40, 45, 50)';
-            ctx.beginPath();
-            ctx.arc(dishX, dishY, size * 0.06, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Superlaser glow (pulsing)
-            const laserGlow = ctx.createRadialGradient(dishX, dishY, 0, dishX, dishY, size * 0.12);
-            laserGlow.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.6 * pulseIntensity})`);
-            laserGlow.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.2 * pulseIntensity})`);
-            laserGlow.addColorStop(1, 'transparent');
-            ctx.fillStyle = laserGlow;
-            ctx.beginPath();
-            ctx.arc(dishX, dishY, size * 0.12, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Surface detail - panel lines
-            ctx.strokeStyle = 'rgba(60, 65, 70, 0.5)';
-            ctx.lineWidth = size * 0.005;
-            for (let lat = 1; lat < 5; lat++) {
-                const latRadius = size * 0.5 * Math.sin(lat * Math.PI / 5);
-                const latY = wobbleOffset + size * 0.5 * Math.cos(lat * Math.PI / 5);
+
+            // Red stripe or NASA logo area
+            if (rs.hasNASA) {
+                // Blue NASA "meatball" background circle
+                ctx.fillStyle = 'rgb(11, 61, 145)';
                 ctx.beginPath();
-                ctx.ellipse(0, latY, latRadius, latRadius * 0.15, 0, 0, Math.PI * 2);
+                ctx.arc(0, wobbleOffset + size * 0.05, size * 0.08, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Red chevron (simplified NASA swoosh)
+                ctx.strokeStyle = 'rgb(252, 61, 33)';
+                ctx.lineWidth = size * 0.015;
+                ctx.beginPath();
+                ctx.moveTo(-size * 0.06, wobbleOffset + size * 0.08);
+                ctx.quadraticCurveTo(0, wobbleOffset - size * 0.02, size * 0.06, wobbleOffset + size * 0.08);
                 ctx.stroke();
+                
+                // White orbit ellipse
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = size * 0.008;
+                ctx.beginPath();
+                ctx.ellipse(0, wobbleOffset + size * 0.05, size * 0.06, size * 0.025, -0.3, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Small white star
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(size * 0.03, wobbleOffset + size * 0.02, size * 0.01, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Regular red stripe
+                ctx.fillStyle = 'rgb(200, 50, 50)';
+                ctx.fillRect(-size * 0.1, wobbleOffset + size * 0.1, size * 0.2, size * 0.08);
             }
-            
-            // Surface highlight
-            const highlightGrad = ctx.createRadialGradient(
-                -size * 0.25, wobbleOffset - size * 0.25, 0,
-                -size * 0.15, wobbleOffset - size * 0.15, size * 0.3
-            );
-            highlightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
-            highlightGrad.addColorStop(1, 'transparent');
-            ctx.fillStyle = highlightGrad;
+
+            // Fins
+            ctx.fillStyle = 'rgb(180, 50, 50)';
+            // Left fin
             ctx.beginPath();
-            ctx.arc(0, wobbleOffset, size * 0.5, 0, Math.PI * 2);
+            ctx.moveTo(-size * 0.1, wobbleOffset + size * 0.2);
+            ctx.lineTo(-size * 0.25, wobbleOffset + size * 0.45);
+            ctx.lineTo(-size * 0.1, wobbleOffset + size * 0.35);
+            ctx.closePath();
             ctx.fill();
+            // Right fin
+            ctx.beginPath();
+            ctx.moveTo(size * 0.1, wobbleOffset + size * 0.2);
+            ctx.lineTo(size * 0.25, wobbleOffset + size * 0.45);
+            ctx.lineTo(size * 0.1, wobbleOffset + size * 0.35);
+            ctx.closePath();
+            ctx.fill();
+
+            // Window
+            ctx.fillStyle = 'rgb(100, 150, 200)';
+            ctx.beginPath();
+            ctx.arc(0, wobbleOffset - size * 0.15, size * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+            
+        } else if (enc.shipType === 7) {
+            // Fighter jet / X-wing style - flies in formation with tilt banking
+            const formationShips = enc.formation || [{ dx: 0, dy: 0 }];
+            const flightAngle = enc.flightAngle || 0;
+            const fs = enc.fighterStyle || { bankTilt: 0.5 };
+            
+            // Bank tilt based on vertical movement direction (vy)
+            // Positive vy = moving down = tilt one way, negative = tilt other way
+            const tiltDirection = enc.vy > 0 ? 1 : -1;
+            const bankAngle = tiltDirection * fs.bankTilt;
+            
+            // Draw each ship in the formation
+            formationShips.forEach((ship) => {
+                ctx.save();
+                
+                // Rotate formation offset by flight angle to keep V-shape behind leader
+                const rotatedDx = ship.dx * Math.cos(flightAngle) - ship.dy * Math.sin(flightAngle);
+                const rotatedDy = ship.dx * Math.sin(flightAngle) + ship.dy * Math.cos(flightAngle);
+                ctx.translate(rotatedDx, rotatedDy);
+                
+                // Apply simple tilt transform - scale X based on bank angle
+                const scaleX = Math.cos(bankAngle);
+                ctx.scale(scaleX, 1);
+                
+                // Engine glows
+                const engineGlow = ctx.createRadialGradient(0, wobbleOffset + size * 0.35, 0, 0, wobbleOffset + size * 0.35, size * 0.25);
+                engineGlow.addColorStop(0, `rgba(255, 100, 100, ${0.7 * pulseIntensity})`);
+                engineGlow.addColorStop(0.5, `rgba(255, 50, 50, ${0.3 * pulseIntensity})`);
+                engineGlow.addColorStop(1, 'transparent');
+                ctx.fillStyle = engineGlow;
+                ctx.beginPath();
+                ctx.arc(-size * 0.2, wobbleOffset + size * 0.35, size * 0.15, 0, Math.PI * 2);
+                ctx.arc(size * 0.2, wobbleOffset + size * 0.35, size * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Main fuselage
+                ctx.fillStyle = 'rgb(100, 105, 115)';
+                ctx.beginPath();
+                ctx.moveTo(0, wobbleOffset - size * 0.45);
+                ctx.lineTo(size * 0.08, wobbleOffset + size * 0.3);
+                ctx.lineTo(-size * 0.08, wobbleOffset + size * 0.3);
+                ctx.closePath();
+                ctx.fill();
+
+                // Wings (X-shape) - one side brighter based on tilt direction
+                const wingShade = Math.floor(80 + tiltDirection * 15);
+                const wingShade2 = Math.floor(80 - tiltDirection * 15);
+                
+                // Upper right wing
+                ctx.fillStyle = `rgb(${wingShade}, ${wingShade + 5}, ${wingShade + 15})`;
+                ctx.beginPath();
+                ctx.moveTo(0, wobbleOffset - size * 0.1);
+                ctx.lineTo(size * 0.45, wobbleOffset - size * 0.3);
+                ctx.lineTo(size * 0.4, wobbleOffset);
+                ctx.lineTo(size * 0.08, wobbleOffset + size * 0.05);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Upper left wing
+                ctx.fillStyle = `rgb(${wingShade2}, ${wingShade2 + 5}, ${wingShade2 + 15})`;
+                ctx.beginPath();
+                ctx.moveTo(0, wobbleOffset - size * 0.1);
+                ctx.lineTo(-size * 0.45, wobbleOffset - size * 0.3);
+                ctx.lineTo(-size * 0.4, wobbleOffset);
+                ctx.lineTo(-size * 0.08, wobbleOffset + size * 0.05);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Lower right wing
+                ctx.fillStyle = `rgb(${wingShade}, ${wingShade + 5}, ${wingShade + 15})`;
+                ctx.beginPath();
+                ctx.moveTo(0, wobbleOffset + size * 0.1);
+                ctx.lineTo(size * 0.4, wobbleOffset + size * 0.35);
+                ctx.lineTo(size * 0.35, wobbleOffset + size * 0.15);
+                ctx.lineTo(size * 0.08, wobbleOffset + size * 0.1);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Lower left wing
+                ctx.fillStyle = `rgb(${wingShade2}, ${wingShade2 + 5}, ${wingShade2 + 15})`;
+                ctx.beginPath();
+                ctx.moveTo(0, wobbleOffset + size * 0.1);
+                ctx.lineTo(-size * 0.4, wobbleOffset + size * 0.35);
+                ctx.lineTo(-size * 0.35, wobbleOffset + size * 0.15);
+                ctx.lineTo(-size * 0.08, wobbleOffset + size * 0.1);
+                ctx.closePath();
+                ctx.fill();
+
+                // Cockpit
+                ctx.fillStyle = 'rgb(50, 80, 120)';
+                ctx.beginPath();
+                ctx.ellipse(0, wobbleOffset - size * 0.2, size * 0.04, size * 0.08, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            });
         }
-        
+
         ctx.restore();
     }
 
@@ -4325,17 +5054,17 @@ function initSpaceScene() {
 
         // Draw clouds behind the encounter (further away, higher z)
         drawGasClouds(encZ > 0 ? encZ : 0, Infinity);
-        
+
         drawStars();
-        
+
         // Draw the encounter
         drawEncounters();
-        
+
         // Draw clouds in front of the encounter (closer, lower z)
         if (encZ > 0) {
             drawGasClouds(0, encZ);
         }
-        
+
         drawBrightStars();
         drawComets();
 
