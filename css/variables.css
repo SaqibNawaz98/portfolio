@@ -1,77 +1,103 @@
 :root {
-    /* Color Palette - Chrome/Cyberpunk Theme */
-    --color-bg: #08080c;
-    --color-bg-elevated: #0c0c12;
-    --color-bg-card: #101018;
+    /* Color Palette - Sorayama Chrome Theme */
+    --color-bg: #050508;
+    --color-bg-elevated: #0a0a10;
+    --color-bg-card: #0e0e16;
     
-    --color-text: #e8e8f0;
-    --color-text-muted: #8888a0;
-    --color-text-subtle: #505068;
+    --color-text: #f0f0f8;
+    --color-text-muted: #9898b0;
+    --color-text-subtle: #606078;
     
-    /* Chrome/Metallic Colors */
-    --color-chrome-light: #f0f0ff;
-    --color-chrome-mid: #b8b8d0;
-    --color-chrome-dark: #606080;
-    --color-chrome-shadow: #28283a;
+    /* Sorayama Chrome Colors - Mirror-like metallic */
+    --color-chrome-highlight: #ffffff;
+    --color-chrome-light: #e8e8ff;
+    --color-chrome-mid: #a0a0c8;
+    --color-chrome-dark: #505070;
+    --color-chrome-shadow: #202030;
+    --color-chrome-deep: #101018;
     
-    /* Neon Accents */
-    --color-primary: #00d4ff;
-    --color-primary-light: #40e0ff;
-    --color-primary-dark: #0099cc;
+    /* Sorayama Pink Reflections */
+    --color-flesh-light: #ffd0e0;
+    --color-flesh-mid: #ff90b0;
+    --color-flesh-dark: #cc6080;
     
-    --color-accent: #ff0080;
-    --color-accent-light: #ff40a0;
-    --color-accent-alt: #8000ff;
+    /* Accent Colors */
+    --color-primary: #60d0ff;
+    --color-primary-light: #90e0ff;
+    --color-primary-dark: #30a0d0;
     
-    --color-neon-blue: #00d4ff;
-    --color-neon-pink: #ff0080;
-    --color-neon-purple: #8000ff;
+    --color-accent: #ff4090;
+    --color-accent-light: #ff70b0;
+    --color-accent-alt: #a050ff;
+    
+    --color-neon-blue: #60d0ff;
+    --color-neon-pink: #ff4090;
+    --color-neon-purple: #a050ff;
     
     --color-border: rgba(255, 255, 255, 0.06);
-    --color-border-light: rgba(255, 255, 255, 0.12);
+    --color-border-light: rgba(255, 255, 255, 0.15);
     
-    /* Chrome Glassmorphism */
+    /* Sorayama Glassmorphism */
     --glass-bg: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.03) 0%,
-        rgba(255, 255, 255, 0.01) 50%,
+        160deg,
+        rgba(255, 255, 255, 0.04) 0%,
+        rgba(255, 200, 220, 0.02) 30%,
+        rgba(255, 255, 255, 0.01) 60%,
         rgba(255, 255, 255, 0.05) 100%
     );
-    --glass-bg-solid: rgba(16, 16, 24, 0.8);
+    --glass-bg-solid: rgba(12, 12, 20, 0.85);
     --glass-bg-hover: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.06) 0%,
-        rgba(255, 255, 255, 0.02) 50%,
-        rgba(255, 255, 255, 0.08) 100%
+        160deg,
+        rgba(255, 255, 255, 0.08) 0%,
+        rgba(255, 200, 220, 0.04) 30%,
+        rgba(255, 255, 255, 0.02) 60%,
+        rgba(255, 255, 255, 0.1) 100%
     );
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.12);
     --glass-blur: 20px;
     
-    /* Chrome Gradients */
+    /* Sorayama Chrome Gradient - Hyper-reflective with pink environment */
     --chrome-gradient: linear-gradient(
         135deg,
-        #f8f8ff 0%,
-        #c0c0d8 20%,
-        #888898 40%,
-        #c8c8e0 60%,
-        #f0f0ff 80%,
-        #a0a0b8 100%
+        #ffffff 0%,
+        #e0e0f8 8%,
+        #ffd8e8 15%,
+        #a8a8d0 25%,
+        #606088 40%,
+        #ffc0d8 50%,
+        #ffffff 55%,
+        #b0b0d8 65%,
+        #808098 80%,
+        #d0d0f0 90%,
+        #ffffff 100%
     );
     
     --chrome-gradient-dark: linear-gradient(
         135deg,
-        #404058 0%,
-        #606080 25%,
-        #9090b0 50%,
-        #505068 75%,
-        #303048 100%
+        #505068 0%,
+        #707090 20%,
+        #ff90a8 35%,
+        #a0a0c0 50%,
+        #606078 70%,
+        #404058 100%
     );
     
+    /* Sorayama Reflection - Pink environment bounce */
     --chrome-reflection: linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.15) 0%,
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 200, 220, 0.1) 30%,
         rgba(255, 255, 255, 0) 50%,
-        rgba(0, 0, 0, 0.2) 100%
+        rgba(255, 150, 180, 0.08) 70%,
+        rgba(0, 0, 0, 0.3) 100%
+    );
+    
+    /* Sorayama Specular Highlight */
+    --chrome-specular: radial-gradient(
+        ellipse 30% 40% at 30% 30%,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(255, 255, 255, 0.4) 20%,
+        transparent 60%
     );
     
     /* Typography */

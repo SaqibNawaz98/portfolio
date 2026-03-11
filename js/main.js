@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initScrollEffects();
     initAnimations();
     initSpaceScene();
+    initChromeEffects();
     setCurrentYear();
 });
 
@@ -90,6 +91,187 @@ function initAnimations() {
         el.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
         cardObserver.observe(el);
     });
+}
+
+function initChromeEffects() {
+    initButtonRipples();
+    initCardTiltEffects();
+    initButtonShineEffects();
+    initScrollIndicator();
+    initAboutImageEffect();
+}
+
+function initButtonRipples() {
+    const buttons = document.querySelectorAll('.btn');
+    
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const ripple = document.createElement('span');
+            ripple.className = 'chrome-ripple';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.width = ripple.style.height = Math.max(rect.width, rect.height) + 'px';
+            
+            this.appendChild(ripple);
+            
+            ripple.addEventListener('animationend', () => ripple.remove());
+        });
+    });
+}
+
+function initCardTiltEffects() {
+    const cards = document.querySelectorAll('.project-card');
+    
+    cards.forEach(card => {
+        const shine = document.createElement('div');
+        shine.className = 'card-shine';
+        card.appendChild(shine);
+        
+        card.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const tiltX = (y - centerY) / centerY * 8;
+            const tiltY = (centerX - x) / centerX * 8;
+            
+            this.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-10px) scale(1.02)`;
+            
+            shine.style.left = x + 'px';
+            shine.style.top = y + 'px';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0) scale(1)';
+        });
+    });
+}
+
+function initButtonShineEffects() {
+    const buttons = document.querySelectorAll('.btn');
+    
+    buttons.forEach(btn => {
+        // Create shine element
+        const shine = document.createElement('div');
+        shine.className = 'btn-shine';
+        btn.appendChild(shine);
+        
+        btn.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Move the shine element
+            shine.style.left = x + 'px';
+            shine.style.top = y + 'px';
+        });
+    });
+    
+    // Also add shine to contact links
+    const contactLinks = document.querySelectorAll('.contact__link');
+    contactLinks.forEach(link => {
+        const shine = document.createElement('div');
+        shine.className = 'btn-shine';
+        link.appendChild(shine);
+        
+        link.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            shine.style.left = x + 'px';
+            shine.style.top = y + 'px';
+        });
+    });
+    
+    const socialLinks = document.querySelectorAll('.social-link');
+    socialLinks.forEach(link => {
+        link.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const tiltX = (y - centerY) / centerY * 10;
+            const tiltY = (centerX - x) / centerX * 10;
+            
+            this.style.transform = `perspective(500px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-4px) scale(1.08)`;
+        });
+        
+        link.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    });
+    
+    const skillCategories = document.querySelectorAll('.skill-category');
+    skillCategories.forEach(category => {
+        const shine = document.createElement('div');
+        shine.className = 'card-shine';
+        category.appendChild(shine);
+        
+        category.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const tiltX = (y - centerY) / centerY * 8;
+            const tiltY = (centerX - x) / centerX * 8;
+            
+            this.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-10px) scale(1.02)`;
+            
+            shine.style.left = x + 'px';
+            shine.style.top = y + 'px';
+        });
+        
+        category.addEventListener('mouseleave', function() {
+            this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0) scale(1)';
+        });
+    });
+}
+
+function initScrollIndicator() {
+    const scrollIndicator = document.querySelector('.hero__scroll');
+    if (scrollIndicator) {
+        scrollIndicator.addEventListener('click', () => {
+            const aboutSection = document.getElementById('about');
+            if (aboutSection) {
+                const navHeight = document.getElementById('nav')?.offsetHeight || 0;
+                const targetPosition = aboutSection.getBoundingClientRect().top + window.pageYOffset - navHeight;
+                window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+            }
+        });
+    }
+}
+
+function initAboutImageEffect() {
+    const aboutImage = document.querySelector('.about__image-placeholder');
+    if (aboutImage) {
+        aboutImage.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const tiltX = (y - centerY) / centerY * 6;
+            const tiltY = (centerX - x) / centerX * 6;
+            
+            this.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
+        });
+        
+        aboutImage.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+        });
+    }
 }
 
 function setCurrentYear() {
@@ -210,7 +392,7 @@ function initSpaceScene() {
 
     // Global spectrum position for color cycling
     let spectrumHue = 0;
-    const spectrumSpeed = 0.025; // Very slow transitions - ~40 seconds per color band
+    const spectrumSpeed = 0.08; // Faster color cycling
 
     // Convert HSL to RGB
     function hslToRgb(h, s, l) {
@@ -261,10 +443,10 @@ function initSpaceScene() {
             glowLightness: 65 + Math.random() * 20, // 65-85 (bright core)
             opacity: 0.25 + Math.random() * 0.45, // 0.25-0.7 (very dense)
             wobble: Math.random() * Math.PI * 2,
-            wobbleSpeed: 0.002 + Math.random() * 0.006,
+            wobbleSpeed: 0.001 + Math.random() * 0.002, // Slower wobble to prevent flicker
             stretch: 0.5 + Math.random() * 0.7,
             rotation: Math.random() * Math.PI * 2,
-            rotationSpeed: (Math.random() - 0.5) * 0.008, // Faster rotation
+            rotationSpeed: (Math.random() - 0.5) * 0.004, // Gentler rotation
             // Additional variation
             coreSize: 0.3 + Math.random() * 0.4, // Larger, more prominent cores
             fadeStyle: Math.floor(Math.random() * 3),
@@ -295,13 +477,87 @@ function initSpaceScene() {
         cloud.puffs = null;
     }
 
-    // Archetypal planet types
+    // Archetypal planet types - expanded variety
     const planetTypes = [
+        // Dwarf planets and small rocky bodies
+        { 
+            type: 'dwarf-gray',
+            colors: [[120, 115, 110], [100, 95, 90], [140, 135, 130], [80, 75, 70]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasRingChance: 0,
+            isDwarf: true, maxMoons: 1
+        },
+        { 
+            type: 'dwarf-dark',
+            colors: [[60, 55, 50], [50, 45, 40], [70, 65, 60], [40, 35, 30]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasRingChance: 0,
+            isDwarf: true, maxMoons: 0
+        },
+        { 
+            type: 'dwarf-brown',
+            colors: [[100, 80, 60], [80, 60, 45], [120, 100, 80], [70, 55, 40]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasRingChance: 0,
+            isDwarf: true, maxMoons: 1
+        },
+        { 
+            type: 'dwarf-ice',
+            colors: [[180, 190, 200], [160, 170, 180], [200, 210, 220], [140, 150, 160]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasRingChance: 0,
+            isDwarf: true, maxMoons: 1
+        },
+        { 
+            type: 'asteroid-rock',
+            colors: [[90, 85, 80], [70, 65, 60], [110, 105, 100], [55, 50, 45]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasRingChance: 0,
+            isDwarf: true, maxMoons: 0
+        },
+        { 
+            type: 'dwarf-reddish',
+            colors: [[130, 90, 70], [110, 75, 55], [150, 105, 85], [95, 60, 45]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasRingChance: 0,
+            isDwarf: true, maxMoons: 1
+        },
+        // Regular planets
         { 
             type: 'gas-giant',
             colors: [[210, 180, 140], [230, 200, 160], [180, 140, 100], [160, 120, 80]],
-            hasBands: true, hasStorm: true, hasRingChance: 0.7,
+            hasBands: true, hasStorm: true, hasSwirls: true, hasRingChance: 0.7,
             ringColor: [220, 200, 170]
+        },
+        { 
+            type: 'gas-giant-blue',
+            colors: [[100, 130, 180], [120, 150, 200], [80, 110, 160], [140, 170, 220]],
+            hasBands: true, hasStorm: true, hasSwirls: true, hasRingChance: 0.5,
+            ringColor: [150, 180, 220]
+        },
+        { 
+            type: 'gas-giant-orange',
+            colors: [[220, 160, 100], [240, 180, 120], [200, 140, 80], [180, 120, 60]],
+            hasBands: true, hasStorm: true, hasSwirls: true, hasRingChance: 0.6,
+            ringColor: [230, 200, 160]
+        },
+        { 
+            type: 'gas-giant-red',
+            colors: [[180, 100, 80], [200, 120, 100], [160, 80, 60], [220, 140, 120]],
+            hasBands: true, hasStorm: true, hasSwirls: true, hasRingChance: 0.4,
+            ringColor: [200, 150, 130]
+        },
+        { 
+            type: 'earth-like',
+            colors: [[60, 130, 80], [80, 150, 100], [50, 110, 60], [70, 140, 90]],
+            hasBands: false, hasStorm: false, hasContinents: true, hasClouds: true, hasRingChance: 0.02,
+            oceanColor: [30, 80, 160], continentColor: [60, 130, 80]
+        },
+        { 
+            type: 'earth-like-arid',
+            colors: [[160, 140, 100], [180, 160, 120], [140, 120, 80], [170, 150, 110]],
+            hasBands: false, hasStorm: false, hasContinents: true, hasClouds: true, hasRingChance: 0.02,
+            oceanColor: [40, 90, 150], continentColor: [160, 140, 100]
+        },
+        { 
+            type: 'super-earth',
+            colors: [[50, 120, 70], [70, 140, 90], [40, 100, 50], [60, 130, 80]],
+            hasBands: false, hasStorm: false, hasContinents: true, hasClouds: true, hasAtmosphere: true, hasRingChance: 0.05,
+            oceanColor: [25, 70, 140], continentColor: [50, 120, 70], atmosphereColor: [100, 160, 220]
         },
         { 
             type: 'ice',
@@ -334,7 +590,7 @@ function initSpaceScene() {
         { 
             type: 'ice-giant',
             colors: [[100, 180, 220], [80, 160, 200], [120, 200, 240], [60, 140, 180]],
-            hasBands: true, hasStorm: false, hasRingChance: 0.5,
+            hasBands: true, hasStorm: false, hasSwirls: true, hasRingChance: 0.5,
             ringColor: [180, 210, 240]
         },
         { 
@@ -342,6 +598,135 @@ function initSpaceScene() {
             colors: [[180, 190, 100], [160, 170, 80], [200, 210, 120], [140, 150, 60]],
             hasBands: false, hasStorm: false, hasClouds: true, hasRingChance: 0.1,
             cloudColor: [200, 200, 100]
+        },
+        { 
+            type: 'rocky',
+            colors: [[140, 130, 120], [120, 110, 100], [160, 150, 140], [100, 90, 80]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasRingChance: 0.05,
+        },
+        { 
+            type: 'mars-like',
+            colors: [[180, 100, 70], [160, 80, 50], [200, 120, 90], [140, 70, 40]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasPolarCaps: true, hasRingChance: 0.02,
+        },
+        { 
+            type: 'purple-exotic',
+            colors: [[140, 80, 160], [120, 60, 140], [160, 100, 180], [100, 50, 120]],
+            hasBands: true, hasStorm: false, hasRingChance: 0.4, hasAtmosphere: true,
+            ringColor: [180, 140, 200], atmosphereColor: [180, 120, 200]
+        },
+        { 
+            type: 'striped',
+            colors: [[220, 200, 180], [180, 160, 140], [200, 180, 160], [240, 220, 200]],
+            hasBands: true, hasStorm: false, hasSwirls: true, hasRingChance: 0.6, boldBands: true,
+            ringColor: [210, 190, 170]
+        },
+        { 
+            type: 'volcanic',
+            colors: [[50, 45, 40], [70, 60, 50], [40, 35, 30], [60, 50, 40]],
+            hasBands: false, hasStorm: false, hasLava: true, hasAtmosphere: true, hasRingChance: 0.02,
+            glowColor: [255, 80, 0], atmosphereColor: [255, 100, 50]
+        },
+        { 
+            type: 'crystalline',
+            colors: [[180, 220, 240], [160, 200, 220], [200, 240, 255], [140, 180, 200]],
+            hasBands: false, hasStorm: false, hasCracks: true, hasShimmer: true, hasRingChance: 0.3,
+            ringColor: [200, 230, 250]
+        },
+        { 
+            type: 'cotton-candy',
+            colors: [[255, 180, 220], [200, 160, 255], [255, 200, 240], [180, 140, 230]],
+            hasBands: true, hasStorm: false, hasSwirls: true, hasRingChance: 0.5, hasClouds: true,
+            ringColor: [255, 200, 230], cloudColor: [255, 255, 255]
+        },
+        { 
+            type: 'neon-toxic',
+            colors: [[0, 255, 180], [80, 255, 120], [0, 200, 150], [60, 230, 100]],
+            hasBands: true, hasStorm: true, hasSwirls: true, hasRingChance: 0.3, hasAtmosphere: true,
+            ringColor: [100, 255, 200], atmosphereColor: [0, 255, 150]
+        },
+        { 
+            type: 'midnight',
+            colors: [[30, 20, 60], [50, 30, 80], [20, 15, 50], [40, 25, 70]],
+            hasBands: true, hasStorm: false, hasSwirls: true, hasRingChance: 0.6, hasAtmosphere: true,
+            ringColor: [80, 60, 120], atmosphereColor: [100, 80, 180]
+        },
+        { 
+            type: 'bubblegum',
+            colors: [[255, 100, 150], [255, 130, 180], [230, 80, 130], [255, 160, 200]],
+            hasBands: false, hasStorm: false, hasClouds: true, hasRingChance: 0.4,
+            cloudColor: [255, 220, 240], ringColor: [255, 180, 210]
+        },
+        { 
+            type: 'rust',
+            colors: [[180, 80, 50], [150, 60, 30], [200, 100, 70], [130, 50, 25]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasDunes: true, hasRingChance: 0.1,
+        },
+        { 
+            type: 'aurora',
+            colors: [[50, 200, 150], [100, 180, 220], [80, 220, 180], [60, 160, 200]],
+            hasBands: true, hasStorm: false, hasSwirls: true, hasRingChance: 0.5, hasAtmosphere: true,
+            ringColor: [100, 220, 200], atmosphereColor: [80, 255, 200]
+        },
+        { 
+            type: 'copper',
+            colors: [[200, 140, 100], [180, 120, 80], [220, 160, 120], [160, 100, 60]],
+            hasBands: false, hasStorm: false, hasCraters: true, hasShimmer: true, hasRingChance: 0.2,
+            ringColor: [210, 170, 130]
+        },
+        { 
+            type: 'void',
+            colors: [[20, 20, 30], [30, 30, 45], [15, 15, 25], [25, 25, 40]],
+            hasBands: false, hasStorm: false, hasCracks: true, hasRingChance: 0.7, hasAtmosphere: true,
+            ringColor: [60, 60, 80], atmosphereColor: [80, 80, 120], glowColor: [100, 100, 150]
+        },
+        { 
+            type: 'candy-corn',
+            colors: [[255, 180, 50], [255, 140, 30], [255, 220, 100], [255, 100, 20]],
+            hasBands: true, hasStorm: true, hasSwirls: true, hasRingChance: 0.4, boldBands: true,
+            ringColor: [255, 200, 120]
+        },
+        { 
+            type: 'mint',
+            colors: [[150, 230, 200], [130, 210, 180], [170, 245, 220], [110, 190, 160]],
+            hasBands: false, hasStorm: false, hasClouds: true, hasOceans: true, hasRingChance: 0.3,
+            oceanColor: [100, 180, 160], cloudColor: [220, 255, 240], ringColor: [180, 240, 220]
+        },
+        { 
+            type: 'lavender',
+            colors: [[180, 160, 220], [200, 180, 240], [160, 140, 200], [220, 200, 255]],
+            hasBands: true, hasStorm: false, hasSwirls: true, hasClouds: true, hasRingChance: 0.5,
+            cloudColor: [240, 230, 255], ringColor: [200, 190, 230]
+        },
+        { 
+            type: 'blood-orange',
+            colors: [[200, 60, 40], [180, 40, 20], [220, 80, 60], [160, 30, 15]],
+            hasBands: true, hasStorm: true, hasSwirls: true, hasRingChance: 0.3, hasAtmosphere: true,
+            ringColor: [220, 100, 80], atmosphereColor: [255, 100, 60]
+        },
+        { 
+            type: 'seafoam',
+            colors: [[100, 200, 180], [80, 180, 160], [120, 220, 200], [60, 160, 140]],
+            hasBands: false, hasStorm: false, hasContinents: true, hasClouds: true, hasRingChance: 0.2,
+            oceanColor: [60, 140, 150], continentColor: [140, 200, 160], cloudColor: [230, 255, 250]
+        },
+        { 
+            type: 'obsidian',
+            colors: [[40, 35, 50], [55, 50, 65], [30, 25, 40], [50, 45, 60]],
+            hasBands: false, hasStorm: false, hasCracks: true, hasShimmer: true, hasRingChance: 0.4,
+            ringColor: [80, 75, 100], glowColor: [120, 100, 180]
+        },
+        { 
+            type: 'peach',
+            colors: [[255, 200, 170], [255, 180, 150], [255, 220, 190], [240, 160, 130]],
+            hasBands: false, hasStorm: false, hasClouds: true, hasAtmosphere: true, hasRingChance: 0.3,
+            cloudColor: [255, 240, 230], atmosphereColor: [255, 180, 150], ringColor: [255, 210, 180]
+        },
+        { 
+            type: 'electric-blue',
+            colors: [[30, 100, 255], [50, 120, 255], [20, 80, 230], [70, 140, 255]],
+            hasBands: true, hasStorm: true, hasSwirls: true, hasRingChance: 0.5, hasAtmosphere: true,
+            ringColor: [100, 160, 255], atmosphereColor: [80, 140, 255]
         },
     ];
 
@@ -416,35 +801,151 @@ function initSpaceScene() {
         
         let x, y, z;
         
+        // Spawn planets on left OR right side to avoid covering hero text
+        const spawnOnLeft = Math.random() > 0.5;
+        
         if (initialSpawn) {
-            // Initial spawn - visible immediately, will fly past but avoid center
+            // Initial spawn - visible immediately, on left or right side
             z = 300 + Math.random() * 400;
-            const angle = Math.random() * Math.PI * 2;
-            const dist = 120 + Math.random() * 150; // Minimum offset to avoid center
-            x = Math.cos(angle) * dist;
-            y = Math.sin(angle) * dist;
+            const xOffset = 150 + Math.random() * 200; // Far enough from center
+            x = spawnOnLeft ? -xOffset : xOffset;
+            y = (Math.random() - 0.5) * 300; // Vertical variance
         } else {
-            // Spawn far away - offset from center so it passes to the side
+            // Spawn far away - on left or right side
             z = 1000 + Math.random() * 400;
-            const angle = Math.random() * Math.PI * 2;
-            const dist = 80 + Math.random() * 180; // Offset ensures it won't hit center
-            x = Math.cos(angle) * dist;
-            y = Math.sin(angle) * dist;
+            const xOffset = 120 + Math.random() * 200; // Offset ensures it stays on one side
+            x = spawnOnLeft ? -xOffset : xOffset;
+            y = (Math.random() - 0.5) * 350; // Vertical variance
+        }
+        
+        // Generate random craters for rocky planets
+        let craters = [];
+        if (typeData.hasCraters) {
+            const craterCount = 5 + Math.floor(Math.random() * 8);
+            for (let i = 0; i < craterCount; i++) {
+                craters.push({
+                    angle: Math.random() * Math.PI * 2,
+                    lat: (Math.random() - 0.5) * 0.8,
+                    size: 0.05 + Math.random() * 0.12,
+                });
+            }
+        }
+        
+        // Generate continents for Earth-like planets
+        let continents = [];
+        if (typeData.hasContinents) {
+            const continentCount = 3 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < continentCount; i++) {
+                // Generate irregular continent shape with multiple lobes
+                const lobes = [];
+                const lobeCount = 2 + Math.floor(Math.random() * 3);
+                for (let l = 0; l < lobeCount; l++) {
+                    lobes.push({
+                        offsetAngle: (Math.random() - 0.5) * 0.4,
+                        offsetLat: (Math.random() - 0.5) * 0.3,
+                        size: 0.3 + Math.random() * 0.4,
+                    });
+                }
+                continents.push({
+                    angle: (i / continentCount) * Math.PI * 2 + Math.random() * 0.5,
+                    lat: (Math.random() - 0.5) * 0.7,
+                    size: 0.15 + Math.random() * 0.2,
+                    lobes: lobes,
+                });
+            }
+        }
+        
+        // Generate swirl patterns for gas giants
+        let swirls = [];
+        if (typeData.hasSwirls) {
+            const swirlCount = 4 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < swirlCount; i++) {
+                swirls.push({
+                    x: (Math.random() - 0.5) * 0.7,
+                    y: (Math.random() - 0.5) * 0.6,
+                    size: 0.08 + Math.random() * 0.15,
+                    rotation: Math.random() * Math.PI * 2,
+                    direction: Math.random() > 0.5 ? 1 : -1,
+                });
+            }
+        }
+        
+        // Determine size based on planet type
+        let baseSize;
+        if (typeData.isDwarf) {
+            baseSize = 8 + Math.random() * 18; // Small: 8-26
+        } else {
+            baseSize = 30 + Math.random() * 130; // Regular: 30-160
+        }
+        
+        // Generate moons with weighted distribution
+        // 0 moons: ~40%, 1 moon: ~35%, 2 moons: ~15%, 3+ moons: ~10%
+        let moonCount = 0;
+        const maxMoons = typeData.maxMoons !== undefined ? typeData.maxMoons : 5;
+        if (maxMoons > 0) {
+            const moonRoll = Math.random();
+            if (moonRoll < 0.40) {
+                moonCount = 0;
+            } else if (moonRoll < 0.75) {
+                moonCount = 1;
+            } else if (moonRoll < 0.90) {
+                moonCount = 2;
+            } else if (moonRoll < 0.97) {
+                moonCount = 3;
+            } else {
+                moonCount = 4;
+            }
+            moonCount = Math.min(moonCount, maxMoons);
+        }
+        
+        // Create moon data
+        const moons = [];
+        for (let m = 0; m < moonCount; m++) {
+            const moonOrbitRadius = baseSize * (0.8 + m * 0.4 + Math.random() * 0.3);
+            const moonSize = 2 + Math.random() * 4 + (typeData.isDwarf ? 0 : Math.random() * 3);
+            moons.push({
+                orbitRadius: moonOrbitRadius,
+                orbitSpeed: 0.0008 + Math.random() * 0.0012,
+                orbitPhase: Math.random() * Math.PI * 2,
+                size: moonSize,
+                color: [
+                    140 + Math.floor(Math.random() * 60),
+                    135 + Math.floor(Math.random() * 60),
+                    130 + Math.floor(Math.random() * 60),
+                ],
+            });
         }
         
         return {
             encounterType: 'planet',
             x, y, z,
-            baseSize: 40 + Math.random() * 100, // More size variation
+            baseSize: baseSize,
             planetType: typeData.type,
+            isDwarf: typeData.isDwarf || false,
+            moons: moons,
             colors: variedColors,
             hasBands: typeData.hasBands,
-            hasStorm: typeData.hasStorm && Math.random() > 0.4,
+            boldBands: typeData.boldBands || false,
+            hasStorm: typeData.hasStorm && Math.random() > 0.3,
+            hasSwirls: typeData.hasSwirls || false,
             hasCracks: typeData.hasCracks || false,
             hasLava: typeData.hasLava || false,
             hasOceans: typeData.hasOceans || false,
             hasClouds: typeData.hasClouds || false,
             hasDunes: typeData.hasDunes || false,
+            hasCraters: typeData.hasCraters || false,
+            hasPolarCaps: typeData.hasPolarCaps || false,
+            hasAtmosphere: typeData.hasAtmosphere || false,
+            hasShimmer: typeData.hasShimmer || false,
+            hasContinents: typeData.hasContinents || false,
+            craters: craters,
+            continents: continents,
+            swirls: swirls,
+            continentColor: typeData.continentColor ? [
+                Math.round(Math.min(255, Math.max(0, typeData.continentColor[0] + (Math.random() - 0.5) * 25))),
+                Math.round(Math.min(255, Math.max(0, typeData.continentColor[1] + (Math.random() - 0.5) * 25))),
+                Math.round(Math.min(255, Math.max(0, typeData.continentColor[2] + (Math.random() - 0.5) * 25))),
+            ] : null,
             glowColor: typeData.glowColor ? [
                 Math.round(Math.min(255, Math.max(0, typeData.glowColor[0] + (Math.random() - 0.5) * 30))),
                 Math.round(Math.min(255, Math.max(0, typeData.glowColor[1] + (Math.random() - 0.5) * 30))),
@@ -460,32 +961,43 @@ function initSpaceScene() {
                 Math.round(Math.min(255, Math.max(0, typeData.cloudColor[1] + (Math.random() - 0.5) * 20))),
                 Math.round(Math.min(255, Math.max(0, typeData.cloudColor[2] + (Math.random() - 0.5) * 20))),
             ] : null,
+            atmosphereColor: typeData.atmosphereColor ? [
+                Math.round(Math.min(255, Math.max(0, typeData.atmosphereColor[0] + (Math.random() - 0.5) * 20))),
+                Math.round(Math.min(255, Math.max(0, typeData.atmosphereColor[1] + (Math.random() - 0.5) * 20))),
+                Math.round(Math.min(255, Math.max(0, typeData.atmosphereColor[2] + (Math.random() - 0.5) * 20))),
+            ] : null,
             stormPos: { x: (Math.random() - 0.5) * 0.5, y: (Math.random() - 0.5) * 0.3 },
-            stormSize: 0.12 + Math.random() * 0.12, // Vary storm size
+            stormSize: 0.12 + Math.random() * 0.18, // Larger storms
             hasRing: hasRing,
             ringSystems: ringSystems,
             rotation: Math.random() * Math.PI * 2,
-            rotationSpeed: 0.001 + Math.random() * 0.003, // Vary rotation speed
+            rotationSpeed: 0.0003 + Math.random() * 0.0015, // Slower, smoother rotation
+            axialTilt: (Math.random() - 0.5) * 0.3, // Slight axial tilt
             bandOffset: Math.random() * 1000,
-            bandCount: 6 + Math.floor(Math.random() * 6), // Vary number of bands
+            bandCount: 5 + Math.floor(Math.random() * 8), // More band variation
             crackSeed: Math.random() * 10000,
-            crackCount: 4 + Math.floor(Math.random() * 5), // Vary crack count
-            cloudCount: 3 + Math.floor(Math.random() * 4), // Vary cloud count
-            oceanCount: 2 + Math.floor(Math.random() * 3), // Vary ocean patches
+            crackCount: 3 + Math.floor(Math.random() * 6), // Vary crack count
+            cloudCount: 2 + Math.floor(Math.random() * 5), // Vary cloud count
+            oceanCount: 1 + Math.floor(Math.random() * 4), // Vary ocean patches
+            shimmerPhase: Math.random() * Math.PI * 2,
         };
     }
 
     function createBlackHole() {
         const spawnZ = 1000 + Math.random() * 400;
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 80 + Math.random() * 150; // Avoid center
+        
+        // Spawn black holes on left OR right side to avoid covering hero text
+        const spawnOnLeft = Math.random() > 0.5;
+        const xOffset = 140 + Math.random() * 180; // Far enough from center
+        const x = spawnOnLeft ? -xOffset : xOffset;
+        const y = (Math.random() - 0.5) * 300; // Vertical variance
         
         return {
             type: 'blackHole',
-            x: Math.cos(angle) * dist,
-            y: Math.sin(angle) * dist,
+            x: x,
+            y: y,
             z: spawnZ,
-            baseSize: 50 + Math.random() * 70,
+            baseSize: 30 + Math.random() * 40,
             warpPhase: Math.random() * Math.PI * 2,
         };
     }
@@ -569,13 +1081,13 @@ function initSpaceScene() {
         const angle = Math.random() * Math.PI * 2;
         const dist = 90 + Math.random() * 140; // Avoid center
         
-        // Star types - subtle, smaller sizes
+        // Star types - small, just slightly larger than background stars
         const prominentStarTypes = [
-            { name: 'blue', color: [140, 170, 255], coronaColor: [100, 140, 255], size: 25 + Math.random() * 20 },
-            { name: 'red', color: [255, 140, 100], coronaColor: [255, 100, 60], size: 30 + Math.random() * 25 },
-            { name: 'white', color: [255, 255, 255], coronaColor: [200, 220, 255], size: 20 + Math.random() * 15 },
-            { name: 'yellow', color: [255, 240, 180], coronaColor: [255, 200, 100], size: 25 + Math.random() * 20 },
-            { name: 'orange', color: [255, 180, 100], coronaColor: [255, 140, 60], size: 28 + Math.random() * 22 },
+            { name: 'blue', color: [140, 170, 255], coronaColor: [100, 140, 255], size: 3 + Math.random() * 2.5 },
+            { name: 'red', color: [255, 140, 100], coronaColor: [255, 100, 60], size: 4 + Math.random() * 3 },
+            { name: 'white', color: [255, 255, 255], coronaColor: [200, 220, 255], size: 3 + Math.random() * 2 },
+            { name: 'yellow', color: [255, 240, 180], coronaColor: [255, 200, 100], size: 3.5 + Math.random() * 2.5 },
+            { name: 'orange', color: [255, 180, 100], coronaColor: [255, 140, 60], size: 3.5 + Math.random() * 3 },
         ];
         
         const starType = prominentStarTypes[Math.floor(Math.random() * prominentStarTypes.length)];
@@ -598,30 +1110,114 @@ function initSpaceScene() {
         const angle = Math.random() * Math.PI * 2;
         const dist = 100 + Math.random() * 150; // Avoid center
         
-        // Ship types: 0: classic UFO saucer, 1: space shuttle, 2: tic-tac UFO, 3: triangular UFO
-        const shipType = Math.floor(Math.random() * 4);
+        // Ship types with weighted rarity:
+        // 0: classic UFO saucer (common)
+        // 1: space shuttle (common)
+        // 3: triangular UFO (common)
+        // 4: Interstellar Endurance (rare)
+        // 5: Death Star (very rare)
+        const shipRoll = Math.random();
+        let shipType;
+        if (shipRoll < 0.30) {
+            shipType = 0; // UFO saucer - 30%
+        } else if (shipRoll < 0.60) {
+            shipType = 1; // Space shuttle - 30%
+        } else if (shipRoll < 0.88) {
+            shipType = 3; // Triangle - 28%
+        } else if (shipRoll < 0.96) {
+            shipType = 4; // Endurance - 8% (rare)
+        } else {
+            shipType = 5; // Death Star - 4% (very rare)
+        }
         
         // Glow colors for UFOs, engine colors for shuttles
         const glowColors = [
             [100, 255, 200], // Cyan-green
             [255, 100, 255], // Magenta
             [100, 200, 255], // Light blue
-            [255, 150, 50],  // Orange (engine)
+            [255, 150, 50],  // Orange
+            [255, 80, 80],   // Red
+            [255, 220, 100], // Yellow
+            [180, 100, 255], // Purple
+            [100, 255, 150], // Green
         ];
-        const glowColor = shipType === 1 ? [255, 150, 50] : glowColors[Math.floor(Math.random() * glowColors.length)];
+        let glowColor;
+        if (shipType === 1) {
+            glowColor = [255, 150, 50]; // Shuttle engine orange
+        } else if (shipType === 4) {
+            glowColor = [200, 220, 255]; // Endurance white-blue
+        } else if (shipType === 5) {
+            glowColor = [100, 255, 100]; // Death Star green
+        } else {
+            glowColor = glowColors[Math.floor(Math.random() * glowColors.length)];
+        }
+        
+        // Size varies by ship type
+        let baseSize;
+        if (shipType === 4) {
+            baseSize = 60 + Math.random() * 40; // Endurance - medium-large
+        } else if (shipType === 5) {
+            baseSize = 80 + Math.random() * 60; // Death Star - large
+        } else {
+            baseSize = 40 + Math.random() * 50; // Others - normal
+        }
+        
+        // UFO-specific variance
+        let ufoStyle = null;
+        if (shipType === 0) {
+            // Different UFO hull colors
+            const hullStyles = [
+                { hull: [75, 80, 90], hullLight: [100, 105, 115], hullDark: [55, 60, 70] }, // Classic silver
+                { hull: [60, 70, 85], hullLight: [85, 95, 115], hullDark: [40, 50, 65] },   // Blue-steel
+                { hull: [85, 75, 70], hullLight: [115, 100, 95], hullDark: [60, 55, 50] },  // Bronze
+                { hull: [50, 55, 50], hullLight: [80, 90, 80], hullDark: [35, 40, 35] },    // Dark green
+                { hull: [90, 85, 80], hullLight: [120, 115, 110], hullDark: [65, 60, 55] }, // Warm grey
+                { hull: [70, 70, 80], hullLight: [100, 100, 115], hullDark: [50, 50, 60] }, // Purple-grey
+                { hull: [40, 45, 55], hullLight: [70, 75, 90], hullDark: [25, 30, 40] },    // Dark navy
+                { hull: [80, 60, 50], hullLight: [110, 85, 75], hullDark: [55, 40, 35] },   // Copper
+            ];
+            const hullStyle = hullStyles[Math.floor(Math.random() * hullStyles.length)];
+            
+            // Dome styles
+            const domeStyles = ['bubble', 'flat', 'tall', 'segmented'];
+            const domeStyle = domeStyles[Math.floor(Math.random() * domeStyles.length)];
+            
+            // Rim light count and style
+            const rimLightCount = 6 + Math.floor(Math.random() * 10);
+            const rimLightStyle = Math.random() > 0.5 ? 'chase' : 'pulse';
+            
+            // Saucer shape variants
+            const saucerShapes = ['classic', 'slim', 'thick', 'ringed'];
+            const saucerShape = saucerShapes[Math.floor(Math.random() * saucerShapes.length)];
+            
+            ufoStyle = {
+                hull: hullStyle.hull,
+                hullLight: hullStyle.hullLight,
+                hullDark: hullStyle.hullDark,
+                domeStyle,
+                rimLightCount,
+                rimLightStyle,
+                saucerShape,
+                hasAntenna: Math.random() > 0.7,
+                hasUnderGlow: Math.random() > 0.3,
+                secondaryGlow: Math.random() > 0.6 ? glowColors[Math.floor(Math.random() * glowColors.length)] : null,
+            };
+        }
         
         return {
             type: 'alienShip',
             x: Math.cos(angle) * dist,
             y: Math.sin(angle) * dist,
             z: spawnZ,
-            baseSize: 40 + Math.random() * 50,
+            baseSize,
             shipType,
             glowColor,
-            rotation: 0, // Ships always appear right side up
-            rotSpeed: 0, // No rotation for ships
+            ufoStyle,
+            rotation: Math.random() * Math.PI * 2,
+            rotSpeed: shipType === 4 ? 0.015 : (Math.random() - 0.5) * 0.008, // Endurance rotates steadily
             pulsePhase: Math.random() * Math.PI * 2,
             wobble: Math.random() * Math.PI * 2,
+            ringAngle: Math.random() * Math.PI * 2, // For Endurance ring rotation
         };
     }
 
@@ -630,21 +1226,21 @@ function initSpaceScene() {
         const roll = Math.random();
         let type;
         
-        if (roll < 0.35) {
+        if (roll < 0.38) {
             type = 'planet';
-        } else if (roll < 0.55) {
+        } else if (roll < 0.58) {
             type = 'prominentStar';
-        } else if (roll < 0.70) {
+        } else if (roll < 0.76) {
             type = 'spaceStation';
-        } else if (roll < 0.88) {
+        } else if (roll < 0.95) {
             type = 'alienShip';
         } else {
-            type = 'blackHole';
+            type = 'blackHole'; // Very rare - only 5%
         }
         
         // Avoid same type twice in a row
         if (type === lastEncounterType && Math.random() > 0.3) {
-            const types = ['planet', 'prominentStar', 'spaceStation', 'alienShip', 'blackHole'];
+            const types = ['planet', 'prominentStar', 'spaceStation', 'alienShip'];
             type = types[Math.floor(Math.random() * types.length)];
         }
         lastEncounterType = type;
@@ -661,7 +1257,17 @@ function initSpaceScene() {
 
     function createComet() {
         // Comets fly across the field of view at various depths
-        const colors = [[220, 240, 255], [255, 250, 240], [200, 255, 220], [255, 220, 200]];
+        // Saturated, vivid colors
+        const colors = [
+            [255, 220, 80],   // Bright gold/yellow
+            [255, 180, 50],   // Orange-yellow
+            [100, 180, 255],  // Bright blue
+            [80, 220, 255],   // Cyan
+            [255, 255, 200],  // Warm white
+            [200, 255, 180],  // Pale green
+            [255, 160, 100],  // Warm orange
+            [180, 200, 255],  // Ice blue
+        ];
         const startZ = 400 + Math.random() * 800;
         const angle = Math.random() * Math.PI * 2;
         
@@ -751,10 +1357,35 @@ function initSpaceScene() {
         ctx.fillRect(0, 0, width, height);
     }
 
-    function drawGasClouds(minZ = 0, maxZ = Infinity) {
-        // Sort by depth (far to near)
+    function updateGasClouds() {
+        // Update all cloud positions and animations in one pass
+        for (let i = 0; i < gasClouds.length; i++) {
+            const cloud = gasClouds[i];
+            
+            cloud.z -= flightSpeed * 3;
+            cloud.wobble += cloud.wobbleSpeed;
+            cloud.rotation += cloud.rotationSpeed;
+            
+            // Update puff animations
+            if (cloud.puffs) {
+                for (let p = 0; p < cloud.puffs.length; p++) {
+                    const puff = cloud.puffs[p];
+                    puff.driftAngle += puff.driftSpeed * 0.5;
+                    puff.pulsePhase += puff.pulseSpeed * 0.5;
+                }
+            }
+            
+            // Reset if cloud passed through viewer
+            if (cloud.z < 20) {
+                resetGasCloud(cloud);
+            }
+        }
+        
+        // Sort once per frame (not per render pass)
         gasClouds.sort((a, b) => b.z - a.z);
+    }
 
+    function drawGasClouds(minZ = 0, maxZ = Infinity) {
         const maxVisibleZ = 1800;
         const fullVisibleZ = 300;
         const fadeRange = maxVisibleZ - fullVisibleZ;
@@ -762,41 +1393,20 @@ function initSpaceScene() {
         for (let i = 0; i < gasClouds.length; i++) {
             const cloud = gasClouds[i];
             
-            // Only update z position on first pass (when drawing far clouds)
-            if (minZ === 0) {
-                cloud.z -= flightSpeed * 3;
-            }
-            
             // Skip clouds outside our z-range for this pass
-            if (cloud.z < minZ || cloud.z > maxZ) {
-                // Still update animation state even if not drawing
-                if (minZ === 0) {
-                    cloud.wobble += cloud.wobbleSpeed;
-                    cloud.rotation += cloud.rotationSpeed;
-                }
+            // Use <= for minZ to avoid gaps at boundary
+            if (cloud.z <= minZ || cloud.z > maxZ) {
                 continue;
             }
             
             // Early exit for invisible clouds
             if (cloud.z > maxVisibleZ) {
-                if (minZ === 0) {
-                    cloud.wobble += cloud.wobbleSpeed;
-                    cloud.rotation += cloud.rotationSpeed;
-                }
                 continue;
             }
 
-            // Reset if cloud passed through viewer
+            // Skip clouds that were reset
             if (cloud.z < 20) {
-                if (minZ === 0) {
-                    resetGasCloud(cloud);
-                }
                 continue;
-            }
-
-            if (minZ === 0) {
-                cloud.wobble += cloud.wobbleSpeed;
-                cloud.rotation += cloud.rotationSpeed;
             }
 
             // 3D projection
@@ -817,10 +1427,13 @@ function initSpaceScene() {
             
             // Calculate opacity early for LOD decisions
             const depthFade = (maxVisibleZ - cloud.z) / fadeRange;
-            const smoothFade = depthFade * depthFade * depthFade;
+            // Smoother ease-in-out curve for gentler transitions
+            const smoothFade = depthFade < 0.5 
+                ? 2 * depthFade * depthFade 
+                : 1 - Math.pow(-2 * depthFade + 2, 2) / 2;
             const edgeFade = getEdgeFade(x, y, 200);
-            const wobbleMod = 0.4 + Math.sin(cloud.wobble) * 0.1;
-            const baseOpacity = cloud.opacity * smoothFade * edgeFade * wobbleMod * 0.55;
+            // Removed wobble modifier on opacity to prevent flickering
+            const baseOpacity = cloud.opacity * smoothFade * edgeFade * 0.28;
 
             if (baseOpacity < 0.01) continue;
             
@@ -886,41 +1499,34 @@ function initSpaceScene() {
             
             // Smooth LOD factor (0 = far/faint, 1 = close/visible)
             const lodFactor = Math.min(1, baseOpacity * 4); // Scales 0-0.25 opacity to 0-1
-            const animationScale = 0.3 + lodFactor * 0.7; // Animation reduced when distant
 
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(cloud.rotation);
             ctx.scale(1, cloud.stretch);
             
-            // Draw puffs with smooth LOD
+            // Draw all puffs with uniform opacity
             const puffs = cloud.puffs;
             const puffCount = puffs.length;
             
-            // Smoothly reduce number of puffs rendered based on LOD
-            const maxPuffsToRender = Math.ceil(puffCount * (0.4 + lodFactor * 0.6));
-            
-            for (let p = 0; p < maxPuffsToRender; p++) {
+            // Render all puffs - use uniform opacity based on cloud opacity (no per-puff LOD fade)
+            for (let p = 0; p < puffCount; p++) {
                 const puff = puffs[p];
                 
-                // Scale animation intensity with distance
-                puff.driftAngle += puff.driftSpeed * animationScale;
-                puff.pulsePhase += puff.pulseSpeed * animationScale;
-                
-                const driftX = Math.cos(puff.driftAngle) * puff.driftRadius * animationScale;
-                const driftY = Math.sin(puff.driftAngle) * puff.driftRadius * 0.6 * animationScale;
+                // Use pre-calculated drift positions (animations updated in updateGasClouds)
+                const driftX = Math.cos(puff.driftAngle) * puff.driftRadius * 0.5;
+                const driftY = Math.sin(puff.driftAngle) * puff.driftRadius * 0.3;
                 const animatedX = puff.baseX + driftX;
                 const animatedY = puff.baseY + driftY;
                 
                 const puffX = animatedX * radius;
                 const puffY = animatedY * radius;
-                const pulseAmount = puff.pulseAmount * animationScale;
+                const pulseAmount = puff.pulseAmount * 0.5;
                 const pulse = 1 + Math.sin(puff.pulsePhase) * pulseAmount;
                 const puffRadius = radius * puff.size * pulse;
                 
-                // Smooth size threshold based on LOD
-                const minPuffSize = 3 + (1 - lodFactor) * 8;
-                if (puffRadius < minPuffSize) continue;
+                // Skip if too small
+                if (puffRadius < 4) continue;
                 
                 // Color blending
                 const blendFactor = (animatedX + animatedY + 1) * 0.5;
@@ -1178,11 +1784,20 @@ function initSpaceScene() {
         if (enc.rotation !== undefined) {
             enc.rotation += enc.rotSpeed || enc.rotationSpeed || 0;
         }
-        if (enc.warpPhase !== undefined) enc.warpPhase += 0.012;
-        if (enc.pulsePhase !== undefined) enc.pulsePhase += 0.03;
-        if (enc.wobble !== undefined) enc.wobble += 0.02;
-        if (enc.lightPhase !== undefined) enc.lightPhase += 0.05;
-        if (enc.flarePhase !== undefined) enc.flarePhase += 0.015;
+        if (enc.warpPhase !== undefined) enc.warpPhase += 0.008;
+        if (enc.pulsePhase !== undefined) enc.pulsePhase += 0.015;
+        if (enc.wobble !== undefined) enc.wobble += 0.01;
+        if (enc.lightPhase !== undefined) enc.lightPhase += 0.025;
+        if (enc.flarePhase !== undefined) enc.flarePhase += 0.008;
+        if (enc.shimmerPhase !== undefined) enc.shimmerPhase += 0.015;
+        if (enc.ringAngle !== undefined) enc.ringAngle += 0.012; // Endurance ring rotation
+        
+        // Update moon orbits
+        if (enc.moons && enc.moons.length > 0) {
+            enc.moons.forEach(moon => {
+                moon.orbitPhase += moon.orbitSpeed;
+            });
+        }
         
         // Update debris piece rotations
         if (enc.pieces) {
@@ -1192,7 +1807,21 @@ function initSpaceScene() {
         // Center avoidance - push encounters away from center as they get closer
         // This ensures we never fly "through" a planet or station
         const encType = enc.encounterType || enc.type;
-        if (encType !== 'blackHole') { // Black holes can be more centered for dramatic effect
+        
+        // Planets and black holes need stronger center avoidance to not cover hero text
+        if (encType === 'planet' || encType === 'blackHole') {
+            const minXDist = 100; // Minimum horizontal distance from center
+            const proximityFactor = Math.max(0, 1 - enc.z / 800);
+            
+            // Keep planets/black holes on their original side (left or right)
+            if (Math.abs(enc.x) < minXDist + proximityFactor * 60) {
+                // Push horizontally away from center
+                const pushDir = enc.x >= 0 ? 1 : -1;
+                const pushStrength = (1 - Math.abs(enc.x) / (minXDist + 60)) * proximityFactor * 3;
+                enc.x += pushDir * pushStrength;
+            }
+        } else if (encType !== 'blackHole') {
+            // Other encounters (stations, ships, stars) use the original center avoidance
             const distFromCenter = Math.sqrt(enc.x * enc.x + enc.y * enc.y);
             const minDist = 60; // Minimum world-space distance from center
             
@@ -1327,14 +1956,106 @@ function initSpaceScene() {
                     const colorIndex = b % c.length;
                     const bandColor = c[colorIndex];
                     if (!bandColor) continue;
-                    const bandOpacity = 0.4 + Math.sin(b * 0.8 + p.bandOffset) * 0.2;
+                    // Bold bands have higher contrast
+                    const baseBandOpacity = p.boldBands ? 0.55 : 0.4;
+                    const bandOpacityVariance = p.boldBands ? 0.25 : 0.2;
+                    const bandOpacity = baseBandOpacity + Math.sin(b * 0.8 + p.bandOffset) * bandOpacityVariance;
                     
                     ctx.fillStyle = `rgba(${Math.round(bandColor[0])}, ${Math.round(bandColor[1])}, ${Math.round(bandColor[2])}, ${bandOpacity})`;
                     ctx.beginPath();
-                    const curveOffset = Math.sin(p.rotation * 2 + b * 0.4) * size * 0.03;
-                    ctx.ellipse(x + curveOffset, bandY + bandHeight / 2, size * 1.1, bandHeight * 0.6, 0, 0, Math.PI * 2);
+                    const curveOffset = Math.sin(p.rotation + b * 0.4) * size * 0.02;
+                    const bandHeightMult = p.boldBands ? 0.75 : 0.6;
+                    ctx.ellipse(x + curveOffset, bandY + bandHeight / 2, size * 1.1, bandHeight * bandHeightMult, 0, 0, Math.PI * 2);
                     ctx.fill();
                 }
+            }
+
+            // Swirling cloud patterns for gas giants
+            if (p.hasSwirls && p.swirls && size > 25) {
+                p.swirls.forEach((swirl, idx) => {
+                    const swirlX = x + swirl.x * size;
+                    const swirlY = y + swirl.y * size;
+                    const swirlSize = swirl.size * size;
+                    const swirlRot = swirl.rotation + p.rotation * 0.5 * swirl.direction;
+                    
+                    // Draw spiral arms
+                    ctx.save();
+                    ctx.translate(swirlX, swirlY);
+                    ctx.rotate(swirlRot);
+                    
+                    const colorIdx = idx % c.length;
+                    const swirlColor = c[colorIdx];
+                    if (swirlColor) {
+                        // Outer swirl glow
+                        const swirlGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, swirlSize * 1.2);
+                        swirlGrad.addColorStop(0, `rgba(${Math.round(swirlColor[0])}, ${Math.round(swirlColor[1])}, ${Math.round(swirlColor[2])}, 0.4)`);
+                        swirlGrad.addColorStop(0.5, `rgba(${Math.round(swirlColor[0])}, ${Math.round(swirlColor[1])}, ${Math.round(swirlColor[2])}, 0.2)`);
+                        swirlGrad.addColorStop(1, 'transparent');
+                        ctx.fillStyle = swirlGrad;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, swirlSize * 1.2, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Spiral arms - more subtle
+                        ctx.strokeStyle = `rgba(${Math.round(Math.min(255, swirlColor[0] + 20))}, ${Math.round(Math.min(255, swirlColor[1] + 20))}, ${Math.round(Math.min(255, swirlColor[2] + 20))}, 0.25)`;
+                        ctx.lineWidth = swirlSize * 0.1;
+                        for (let arm = 0; arm < 2; arm++) {
+                            ctx.beginPath();
+                            for (let t = 0; t <= 1; t += 0.1) {
+                                const spiralAngle = arm * Math.PI + t * Math.PI * 1.2 * swirl.direction;
+                                const spiralRadius = swirlSize * t * 0.9;
+                                const sx = Math.cos(spiralAngle) * spiralRadius;
+                                const sy = Math.sin(spiralAngle) * spiralRadius * 0.6;
+                                if (t === 0) ctx.moveTo(sx, sy);
+                                else ctx.lineTo(sx, sy);
+                            }
+                            ctx.stroke();
+                        }
+                    }
+                    ctx.restore();
+                });
+            }
+
+            // Earth-like continents
+            if (p.hasContinents && p.continents && p.oceanColor && size > 20) {
+                // First draw ocean base
+                const oc = p.oceanColor;
+                ctx.fillStyle = `rgba(${Math.round(oc[0])}, ${Math.round(oc[1])}, ${Math.round(oc[2])}, 0.85)`;
+                ctx.beginPath();
+                ctx.arc(x, y, size * 0.98, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw continents
+                const contColor = p.continentColor || [80, 140, 80];
+                p.continents.forEach(cont => {
+                    const contAngle = cont.angle + p.rotation * 0.8;
+                    const contX = x + Math.cos(contAngle) * size * 0.35 * (1 - Math.abs(cont.lat));
+                    const contY = y + cont.lat * size * 0.6;
+                    const contSize = cont.size * size;
+                    
+                    // Main continent body
+                    ctx.fillStyle = `rgba(${Math.round(contColor[0])}, ${Math.round(contColor[1])}, ${Math.round(contColor[2])}, 0.9)`;
+                    ctx.beginPath();
+                    ctx.ellipse(contX, contY, contSize * 1.1, contSize * 0.7, cont.angle * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Add lobes for irregular shape
+                    cont.lobes.forEach(lobe => {
+                        const lobeX = contX + Math.cos(cont.angle + lobe.offsetAngle) * contSize * 0.4;
+                        const lobeY = contY + lobe.offsetLat * contSize * 0.8;
+                        const lobeSize = contSize * lobe.size * 0.8;
+                        ctx.fillStyle = `rgba(${Math.round(contColor[0] - 10)}, ${Math.round(contColor[1] - 10)}, ${Math.round(contColor[2] - 10)}, 0.85)`;
+                        ctx.beginPath();
+                        ctx.ellipse(lobeX, lobeY, lobeSize, lobeSize * 0.5, cont.angle * 0.3, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    
+                    // Mountain/terrain highlights
+                    ctx.fillStyle = `rgba(${Math.round(Math.min(255, contColor[0] + 40))}, ${Math.round(Math.min(255, contColor[1] + 30))}, ${Math.round(Math.min(255, contColor[2] + 20))}, 0.3)`;
+                    ctx.beginPath();
+                    ctx.ellipse(contX - contSize * 0.15, contY - contSize * 0.08, contSize * 0.25, contSize * 0.12, cont.angle * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
             }
 
             // Ice cracks
@@ -1406,32 +2127,111 @@ function initSpaceScene() {
             if (p.hasClouds && size > 20) {
                 const cloudCol = p.cloudColor || [255, 255, 255];
                 for (let cl = 0; cl < p.cloudCount; cl++) {
-                    const clAngle = (cl / p.cloudCount) * Math.PI * 2 + p.rotation * 3;
-                    const clX = x + Math.cos(clAngle) * size * 0.5;
-                    const clY = y + Math.sin(clAngle) * size * 0.3;
-                    const clSize = size * (0.15 + Math.sin(p.bandOffset + cl) * 0.05);
-                    ctx.fillStyle = `rgba(${Math.round(cloudCol[0])}, ${Math.round(cloudCol[1])}, ${Math.round(cloudCol[2])}, 0.4)`;
+                    const clAngle = (cl / p.cloudCount) * Math.PI * 2 + p.rotation * 0.8;
+                    const clX = x + Math.cos(clAngle) * size * 0.45;
+                    const clY = y + Math.sin(clAngle) * size * 0.25;
+                    const clSize = size * (0.12 + Math.sin(p.bandOffset + cl) * 0.04);
+                    ctx.fillStyle = `rgba(${Math.round(cloudCol[0])}, ${Math.round(cloudCol[1])}, ${Math.round(cloudCol[2])}, 0.35)`;
                     ctx.beginPath();
-                    ctx.ellipse(clX, clY, clSize * 1.5, clSize, clAngle * 0.5, 0, Math.PI * 2);
+                    ctx.ellipse(clX, clY, clSize * 1.3, clSize * 0.8, cl * 0.3, 0, Math.PI * 2);
                     ctx.fill();
                 }
             }
 
-            // Storm spot for gas giants
-            if (p.hasStorm) {
+            // Storm spot for gas giants (Great Red Spot style)
+            if (p.hasStorm && size > 25) {
                 const stormX = x + p.stormPos.x * size;
                 const stormY = y + p.stormPos.y * size;
                 const sSize = size * p.stormSize;
+                const stormRot = p.rotation * 0.5;
                 
-                const stormGrad = ctx.createRadialGradient(stormX, stormY, 0, stormX, stormY, sSize);
-                stormGrad.addColorStop(0, `rgba(200, 100, 80, 0.9)`);
-                stormGrad.addColorStop(0.4, `rgba(180, 80, 60, 0.7)`);
-                stormGrad.addColorStop(0.7, `rgba(160, 60, 40, 0.4)`);
-                stormGrad.addColorStop(1, 'transparent');
-                ctx.fillStyle = stormGrad;
+                ctx.save();
+                ctx.translate(stormX, stormY);
+                
+                // Outer storm glow
+                const outerGrad = ctx.createRadialGradient(0, 0, sSize * 0.2, 0, 0, sSize * 1.3);
+                outerGrad.addColorStop(0, `rgba(220, 120, 90, 0.7)`);
+                outerGrad.addColorStop(0.4, `rgba(200, 100, 70, 0.4)`);
+                outerGrad.addColorStop(0.7, `rgba(180, 80, 50, 0.2)`);
+                outerGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = outerGrad;
                 ctx.beginPath();
-                ctx.ellipse(stormX, stormY, sSize * 1.3, sSize * 0.8, p.rotation * 0.5, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, sSize * 1.3, sSize * 0.8, stormRot * 0.1, 0, Math.PI * 2);
                 ctx.fill();
+                
+                // Storm swirl - simplified, subtle
+                ctx.strokeStyle = `rgba(180, 70, 50, 0.3)`;
+                ctx.lineWidth = sSize * 0.06;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, sSize * 0.7, sSize * 0.45, stormRot * 0.15, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Storm eye (darker center)
+                const eyeGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, sSize * 0.35);
+                eyeGrad.addColorStop(0, `rgba(150, 60, 40, 0.8)`);
+                eyeGrad.addColorStop(0.6, `rgba(180, 80, 60, 0.5)`);
+                eyeGrad.addColorStop(1, `rgba(200, 100, 80, 0.2)`);
+                ctx.fillStyle = eyeGrad;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, sSize * 0.45, sSize * 0.28, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+
+            // Craters for rocky planets
+            if (p.hasCraters && p.craters && size > 20) {
+                p.craters.forEach(crater => {
+                    const crX = x + Math.cos(crater.angle + p.rotation * 0.6) * size * (0.25 + crater.lat * 0.4);
+                    const crY = y + crater.lat * size * 0.6;
+                    const crSize = size * crater.size * 0.9;
+                    
+                    // Crater shadow
+                    ctx.fillStyle = `rgba(0, 0, 0, 0.25)`;
+                    ctx.beginPath();
+                    ctx.ellipse(crX + crSize * 0.08, crY + crSize * 0.08, crSize, crSize * 0.65, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Crater rim highlight
+                    ctx.strokeStyle = `rgba(255, 255, 255, 0.12)`;
+                    ctx.lineWidth = crSize * 0.12;
+                    ctx.beginPath();
+                    ctx.arc(crX, crY, crSize * 0.75, Math.PI * 0.8, Math.PI * 1.8);
+                    ctx.stroke();
+                });
+            }
+
+            // Polar ice caps
+            if (p.hasPolarCaps && size > 25) {
+                // North cap
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.beginPath();
+                ctx.ellipse(x, y - size * 0.85, size * 0.4, size * 0.15, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // South cap
+                ctx.fillStyle = 'rgba(240, 245, 255, 0.5)';
+                ctx.beginPath();
+                ctx.ellipse(x, y + size * 0.88, size * 0.35, size * 0.12, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Shimmer effect for crystalline planets
+            if (p.hasShimmer && size > 25) {
+                const shimmerCount = 6;
+                for (let sh = 0; sh < shimmerCount; sh++) {
+                    const shAngle = (sh / shimmerCount) * Math.PI * 2 + p.shimmerPhase * 0.5;
+                    const shDist = size * (0.25 + Math.sin(p.shimmerPhase + sh) * 0.2);
+                    const shX = x + Math.cos(shAngle) * shDist;
+                    const shY = y + Math.sin(shAngle) * shDist * 0.6;
+                    const shIntensity = Math.max(0, Math.sin(p.shimmerPhase + sh * 1.2));
+                    
+                    if (shIntensity > 0.6) {
+                        ctx.fillStyle = `rgba(255, 255, 255, ${(shIntensity - 0.6) * 0.6})`;
+                        ctx.beginPath();
+                        ctx.arc(shX, shY, size * 0.025, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
             }
 
             ctx.restore(); // End clipping
@@ -1448,12 +2248,29 @@ function initSpaceScene() {
             ctx.arc(x, y, size, 0, Math.PI * 2);
             ctx.fill();
 
+            // Visible atmosphere glow for planets with hasAtmosphere
+            if (p.hasAtmosphere && p.atmosphereColor) {
+                const atmGrad = ctx.createRadialGradient(x, y, size * 0.9, x, y, size * 1.4);
+                atmGrad.addColorStop(0, 'transparent');
+                atmGrad.addColorStop(0.3, `rgba(${Math.round(p.atmosphereColor[0])}, ${Math.round(p.atmosphereColor[1])}, ${Math.round(p.atmosphereColor[2])}, 0.15)`);
+                atmGrad.addColorStop(0.6, `rgba(${Math.round(p.atmosphereColor[0])}, ${Math.round(p.atmosphereColor[1])}, ${Math.round(p.atmosphereColor[2])}, 0.08)`);
+                atmGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = atmGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, size * 1.4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
             // Atmosphere limb based on planet type
             let limbColor = c[0] || [150, 150, 180];
-            if (p.planetType === 'ice') limbColor = [180, 220, 255];
+            if (p.planetType === 'ice' || p.planetType === 'crystalline') limbColor = [180, 220, 255];
             else if (p.planetType === 'lava' && p.glowColor) limbColor = p.glowColor;
+            else if (p.planetType === 'volcanic' && p.glowColor) limbColor = p.glowColor;
             else if (p.planetType === 'lush') limbColor = [100, 180, 220];
             else if (p.planetType === 'toxic') limbColor = [180, 200, 100];
+            else if (p.planetType === 'purple-exotic') limbColor = [180, 120, 200];
+            else if (p.planetType === 'mars-like') limbColor = [200, 150, 130];
+            else if (p.atmosphereColor) limbColor = p.atmosphereColor;
 
             const limbGrad = ctx.createRadialGradient(x, y, size * 0.88, x, y, size * 1.12);
             limbGrad.addColorStop(0, 'transparent');
@@ -1478,6 +2295,43 @@ function initSpaceScene() {
             // Draw ring in front of planet
             if (p.hasRing) {
                 drawPlanetRing(x, y, size, p, true);
+            }
+            
+            // Draw moons
+            if (p.moons && p.moons.length > 0) {
+                p.moons.forEach(moon => {
+                    const moonAngle = moon.orbitPhase;
+                    const moonX = x + Math.cos(moonAngle) * moon.orbitRadius;
+                    const moonY = y + Math.sin(moonAngle) * moon.orbitRadius * 0.3; // Flatten orbit
+                    const moonSize = moon.size * (size / 80); // Scale with planet
+                    
+                    // Only draw moon if in front (positive y offset in orbit)
+                    const inFrontOfPlanet = Math.sin(moonAngle) > -0.3;
+                    
+                    if (inFrontOfPlanet || Math.abs(moonX - x) > size * 0.8) {
+                        // Moon body
+                        const mc = moon.color;
+                        const moonGrad = ctx.createRadialGradient(
+                            moonX - moonSize * 0.3, moonY - moonSize * 0.3, 0,
+                            moonX, moonY, moonSize
+                        );
+                        moonGrad.addColorStop(0, `rgba(${mc[0] + 40}, ${mc[1] + 40}, ${mc[2] + 40}, 1)`);
+                        moonGrad.addColorStop(0.6, `rgba(${mc[0]}, ${mc[1]}, ${mc[2]}, 1)`);
+                        moonGrad.addColorStop(1, `rgba(${mc[0] - 30}, ${mc[1] - 30}, ${mc[2] - 30}, 1)`);
+                        ctx.fillStyle = moonGrad;
+                        ctx.beginPath();
+                        ctx.arc(moonX, moonY, moonSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Subtle crater hints on larger moons
+                        if (moonSize > 3) {
+                            ctx.fillStyle = `rgba(${mc[0] - 20}, ${mc[1] - 20}, ${mc[2] - 20}, 0.3)`;
+                            ctx.beginPath();
+                            ctx.arc(moonX + moonSize * 0.2, moonY + moonSize * 0.1, moonSize * 0.25, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                });
             }
 
             ctx.restore();
@@ -1633,63 +2487,26 @@ function initSpaceScene() {
         ctx.globalAlpha = totalFade;
         
         const c = star.color;
-        const cc = star.coronaColor;
-        const pulseIntensity = 0.92 + Math.sin(star.pulsePhase) * 0.08;
+        const pulseIntensity = 0.97 + Math.sin(star.pulsePhase) * 0.03;
         
-        // Soft outer glow
-        const glowSize = size * 1.8;
-        const glowGrad = ctx.createRadialGradient(x, y, size * 0.2, x, y, glowSize);
-        glowGrad.addColorStop(0, `rgba(${cc[0]}, ${cc[1]}, ${cc[2]}, ${0.25 * pulseIntensity})`);
-        glowGrad.addColorStop(0.4, `rgba(${cc[0]}, ${cc[1]}, ${cc[2]}, ${0.1 * pulseIntensity})`);
+        // Soft glow (subtle)
+        const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, size * 1.2);
+        glowGrad.addColorStop(0, `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${0.2 * pulseIntensity})`);
+        glowGrad.addColorStop(0.6, `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${0.06 * pulseIntensity})`);
         glowGrad.addColorStop(1, 'transparent');
         ctx.fillStyle = glowGrad;
         ctx.beginPath();
-        ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+        ctx.arc(x, y, size * 1.2, 0, Math.PI * 2);
         ctx.fill();
         
-        // Subtle light spikes (4 pointed star effect)
-        ctx.globalAlpha = totalFade * 0.25;
-        const spikeLength = size * 1.2;
-        for (let i = 0; i < 4; i++) {
-            const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
-            const spikeGrad = ctx.createLinearGradient(
-                x, y,
-                x + Math.cos(angle) * spikeLength,
-                y + Math.sin(angle) * spikeLength
-            );
-            spikeGrad.addColorStop(0, `rgba(255, 255, 255, 0.5)`);
-            spikeGrad.addColorStop(0.5, `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.15)`);
-            spikeGrad.addColorStop(1, 'transparent');
-            
-            ctx.strokeStyle = spikeGrad;
-            ctx.lineWidth = size * 0.04;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + Math.cos(angle) * spikeLength, y + Math.sin(angle) * spikeLength);
-            ctx.stroke();
-        }
-        ctx.globalAlpha = totalFade;
-        
-        // Main star body
-        const bodyGrad = ctx.createRadialGradient(x - size * 0.1, y - size * 0.1, 0, x, y, size * 0.5);
-        bodyGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        bodyGrad.addColorStop(0.4, `rgba(${Math.min(255, c[0] + 30)}, ${Math.min(255, c[1] + 30)}, ${Math.min(255, c[2] + 30)}, 0.95)`);
-        bodyGrad.addColorStop(0.8, `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.9)`);
-        bodyGrad.addColorStop(1, `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.7)`);
+        // Star body - simple bright point
+        const bodyGrad = ctx.createRadialGradient(x, y, 0, x, y, size * 0.4);
+        bodyGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        bodyGrad.addColorStop(0.5, `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.7)`);
+        bodyGrad.addColorStop(1, `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.3)`);
         ctx.fillStyle = bodyGrad;
         ctx.beginPath();
-        ctx.arc(x, y, size * 0.45 * pulseIntensity, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Bright center highlight
-        ctx.globalAlpha = totalFade * 0.7;
-        const coreGrad = ctx.createRadialGradient(x - size * 0.05, y - size * 0.05, 0, x, y, size * 0.2);
-        coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-        coreGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
-        coreGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = coreGrad;
-        ctx.beginPath();
-        ctx.arc(x, y, size * 0.2, 0, Math.PI * 2);
+        ctx.arc(x, y, size * 0.4 * pulseIntensity, 0, Math.PI * 2);
         ctx.fill();
         
         ctx.restore();
@@ -1698,134 +2515,150 @@ function initSpaceScene() {
     function drawBlackHoleEncounter(bh, x, y, size, totalFade) {
         ctx.save();
         
-        const eventHorizonRadius = size * 0.9;
-        const warpZoneRadius = size * 2.2;
+        const eventHorizonRadius = size * 0.6;
+        const lensRadius = size * 2.2;
         
-        // ========== GRAVITATIONAL WARPING EFFECT ==========
-        // Draw warped/distorted rings around the event horizon
+        // ========== WATERY DISTORTION FIELD ==========
+        // Smooth, fluid gradient layers instead of lined rings
         ctx.globalAlpha = totalFade;
         
-        // Distortion rings - light being bent around the hole
-        const warpRings = 12;
-        for (let ring = 0; ring < warpRings; ring++) {
-            const t = ring / warpRings;
-            const ringRadius = eventHorizonRadius + (warpZoneRadius - eventHorizonRadius) * t;
-            const distortStrength = (1 - t) * size * 0.15; // Stronger distortion closer to center
+        // Outer ripple waves - soft, watery effect
+        const rippleCount = 5;
+        for (let r = rippleCount; r >= 0; r--) {
+            const t = r / rippleCount;
+            const rippleRadius = eventHorizonRadius * 1.3 + (lensRadius - eventHorizonRadius) * t;
             
-            ctx.beginPath();
-            const segments = 60;
-            for (let s = 0; s <= segments; s++) {
-                const angle = (s / segments) * Math.PI * 2;
-                
-                // Multiple wave distortions for chaotic warping
-                const warp1 = Math.sin(angle * 3 + bh.warpPhase * 1.2) * distortStrength;
-                const warp2 = Math.sin(angle * 5 - bh.warpPhase * 0.8) * distortStrength * 0.5;
-                const warp3 = Math.sin(angle * 7 + bh.warpPhase * 2) * distortStrength * 0.3;
-                const totalWarp = warp1 + warp2 + warp3;
-                
-                const px = x + Math.cos(angle) * (ringRadius + totalWarp);
-                const py = y + Math.sin(angle) * (ringRadius + totalWarp);
-                
-                if (s === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
-            }
-            ctx.closePath();
+            // Animated, flowing distortion
+            const flowSpeed = bh.warpPhase * 0.8;
+            const waveAmp = size * 0.08 * (1 - t * 0.5);
             
-            // Rings get dimmer and more blue-shifted further out
-            const intensity = (1 - t * 0.7) * 0.25;
-            const blueShift = t * 100;
-            ctx.strokeStyle = `rgba(${150 + blueShift * 0.5}, ${180 + blueShift * 0.3}, ${220 + blueShift * 0.35}, ${intensity})`;
-            ctx.lineWidth = 1.5 - t * 0.8;
-            ctx.stroke();
-        }
-        
-        // ========== PHOTON RING - bright edge at event horizon ==========
-        // The last light that can escape, circling the black hole
-        ctx.globalAlpha = totalFade;
-        
-        for (let pr = 0; pr < 4; pr++) {
-            const photonRadius = eventHorizonRadius * (1.02 + pr * 0.04);
-            const photonOpacity = (0.8 - pr * 0.15);
-            const distortStrength = size * 0.03 * (1 + pr * 0.5);
-            
-            ctx.beginPath();
-            const segments = 80;
-            for (let s = 0; s <= segments; s++) {
-                const angle = (s / segments) * Math.PI * 2;
-                const warp = Math.sin(angle * 4 + bh.warpPhase * 1.5 + pr) * distortStrength;
-                const px = x + Math.cos(angle) * (photonRadius + warp);
-                const py = y + Math.sin(angle) * (photonRadius + warp);
-                
-                if (s === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
-            }
-            ctx.closePath();
-            
-            // Bright orange/white glow
-            ctx.shadowColor = `rgba(255, 200, 150, ${photonOpacity * 0.6})`;
-            ctx.shadowBlur = 15 - pr * 3;
-            ctx.strokeStyle = `rgba(255, ${220 - pr * 20}, ${180 - pr * 30}, ${photonOpacity})`;
-            ctx.lineWidth = 3 - pr * 0.5;
-            ctx.stroke();
-        }
-        ctx.shadowBlur = 0;
-        
-        // ========== STREAKING LIGHT being pulled in ==========
-        ctx.globalAlpha = totalFade * 0.6;
-        const streakCount = 16;
-        for (let s = 0; s < streakCount; s++) {
-            const baseAngle = (s / streakCount) * Math.PI * 2 + bh.warpPhase * 0.3;
-            const streakPhase = (bh.warpPhase * 2 + s * 0.8) % (Math.PI * 2);
-            const streakProgress = (Math.sin(streakPhase) + 1) / 2; // 0 to 1 pulsing
-            
-            // Spiral path into the hole
-            ctx.beginPath();
-            const startRadius = warpZoneRadius * (0.8 + streakProgress * 0.4);
-            const endRadius = eventHorizonRadius * 1.05;
-            
-            for (let t = 0; t <= 1; t += 0.05) {
-                const radius = startRadius - (startRadius - endRadius) * t;
-                const spiralAngle = baseAngle + t * Math.PI * 0.8;
-                const px = x + Math.cos(spiralAngle) * radius;
-                const py = y + Math.sin(spiralAngle) * radius;
-                
-                if (t === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
-            }
-            
-            const streakGrad = ctx.createLinearGradient(
-                x + Math.cos(baseAngle) * startRadius,
-                y + Math.sin(baseAngle) * startRadius,
-                x, y
+            // Create watery gradient for each ripple
+            const rippleGrad = ctx.createRadialGradient(
+                x + Math.sin(flowSpeed + t * 2) * waveAmp,
+                y + Math.cos(flowSpeed * 1.3 + t * 2) * waveAmp,
+                rippleRadius * 0.85,
+                x, y, rippleRadius * 1.1
             );
-            streakGrad.addColorStop(0, 'rgba(200, 220, 255, 0)');
-            streakGrad.addColorStop(0.4, `rgba(220, 200, 180, ${0.15 * streakProgress})`);
-            streakGrad.addColorStop(0.8, `rgba(255, 220, 180, ${0.4 * streakProgress})`);
-            streakGrad.addColorStop(1, 'rgba(255, 200, 150, 0)');
             
-            ctx.strokeStyle = streakGrad;
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            const opacity = 0.08 * (1 - t * 0.6);
+            const blueShift = (1 - t) * 30;
+            rippleGrad.addColorStop(0, 'transparent');
+            rippleGrad.addColorStop(0.3, `rgba(${80 + blueShift}, ${100 + blueShift}, ${140 + blueShift}, ${opacity})`);
+            rippleGrad.addColorStop(0.6, `rgba(${60 + blueShift}, ${80 + blueShift}, ${120 + blueShift}, ${opacity * 0.7})`);
+            rippleGrad.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = rippleGrad;
+            ctx.beginPath();
+            
+            // Organic, wobbly circle
+            const segments = 48;
+            for (let s = 0; s <= segments; s++) {
+                const angle = (s / segments) * Math.PI * 2;
+                
+                // Smooth, flowing wave distortion
+                const wave1 = Math.sin(angle * 2 + flowSpeed) * waveAmp;
+                const wave2 = Math.sin(angle * 3 - flowSpeed * 0.7) * waveAmp * 0.6;
+                const wave3 = Math.cos(angle * 1.5 + flowSpeed * 1.2) * waveAmp * 0.4;
+                const totalWave = wave1 + wave2 + wave3;
+                
+                const px = x + Math.cos(angle) * (rippleRadius + totalWave);
+                const py = y + Math.sin(angle) * (rippleRadius + totalWave);
+                
+                if (s === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
         }
         
-        // ========== THE VOID - absolute black hole ==========
-        // Use destination-out to literally cut a hole in the canvas
+        // ========== INNER DISTORTION GLOW ==========
+        // Smooth gradient pull effect toward center
+        ctx.globalAlpha = totalFade * 0.6;
+        
+        const innerGlow = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.8, x, y, lensRadius * 0.7);
+        innerGlow.addColorStop(0, 'rgba(20, 30, 50, 0.5)');
+        innerGlow.addColorStop(0.3, 'rgba(40, 60, 100, 0.25)');
+        innerGlow.addColorStop(0.6, 'rgba(60, 80, 120, 0.1)');
+        innerGlow.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = innerGlow;
+        ctx.beginPath();
+        ctx.arc(x, y, lensRadius * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // ========== SUBTLE SWIRL EFFECT ==========
+        // Gentle curved gradients suggesting matter being pulled in
+        ctx.globalAlpha = totalFade * 0.2;
+        
+        for (let swirl = 0; swirl < 3; swirl++) {
+            const swirlAngle = (swirl / 3) * Math.PI * 2 + bh.warpPhase * 0.3;
+            const swirlGrad = ctx.createRadialGradient(
+                x + Math.cos(swirlAngle) * size * 0.3,
+                y + Math.sin(swirlAngle) * size * 0.3,
+                0,
+                x + Math.cos(swirlAngle) * size * 0.3,
+                y + Math.sin(swirlAngle) * size * 0.3,
+                size * 0.8
+            );
+            swirlGrad.addColorStop(0, 'rgba(100, 130, 180, 0.3)');
+            swirlGrad.addColorStop(0.4, 'rgba(80, 110, 160, 0.15)');
+            swirlGrad.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = swirlGrad;
+            ctx.beginPath();
+            ctx.arc(x + Math.cos(swirlAngle) * size * 0.3, y + Math.sin(swirlAngle) * size * 0.3, size * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // ========== PHOTON SPHERE - soft glow ring ==========
+        ctx.globalAlpha = totalFade * 0.4;
+        const photonRadius = eventHorizonRadius * 1.2;
+        
+        const photonGrad = ctx.createRadialGradient(x, y, photonRadius * 0.9, x, y, photonRadius * 1.15);
+        photonGrad.addColorStop(0, 'transparent');
+        photonGrad.addColorStop(0.3, 'rgba(150, 180, 220, 0.2)');
+        photonGrad.addColorStop(0.5, 'rgba(180, 200, 240, 0.35)');
+        photonGrad.addColorStop(0.7, 'rgba(150, 180, 220, 0.2)');
+        photonGrad.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = photonGrad;
+        ctx.beginPath();
+        
+        // Gently wobbling photon sphere
+        const photonSegments = 48;
+        for (let s = 0; s <= photonSegments; s++) {
+            const angle = (s / photonSegments) * Math.PI * 2;
+            const warp = Math.sin(angle * 2 + bh.warpPhase * 1.5) * size * 0.015 +
+                        Math.cos(angle * 3 - bh.warpPhase) * size * 0.01;
+            const px = x + Math.cos(angle) * (photonRadius + warp);
+            const py = y + Math.sin(angle) * (photonRadius + warp);
+            if (s === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        
+        // ========== THE VOID - absolute black center ==========
         ctx.globalAlpha = totalFade;
         ctx.globalCompositeOperation = 'destination-out';
         
-        // Soft edge fade for the void
-        const voidGrad = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.7, x, y, eventHorizonRadius);
+        // Smooth gradient edge
+        const voidGrad = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.4, x, y, eventHorizonRadius * 1.1);
         voidGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
         voidGrad.addColorStop(0.6, 'rgba(0, 0, 0, 1)');
-        voidGrad.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
+        voidGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.7)');
+        voidGrad.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
         
         ctx.fillStyle = voidGrad;
         ctx.beginPath();
-        // Slightly warped edge for the event horizon
-        const voidSegments = 60;
+        
+        // Softly warped void edge
+        const voidSegments = 48;
         for (let s = 0; s <= voidSegments; s++) {
             const angle = (s / voidSegments) * Math.PI * 2;
-            const warp = Math.sin(angle * 6 + bh.warpPhase) * size * 0.015;
+            const warp = Math.sin(angle * 2 + bh.warpPhase * 0.6) * size * 0.015 +
+                        Math.cos(angle * 3 - bh.warpPhase * 0.8) * size * 0.01;
+            
             const px = x + Math.cos(angle) * (eventHorizonRadius + warp);
             const py = y + Math.sin(angle) * (eventHorizonRadius + warp);
             
@@ -1835,36 +2668,25 @@ function initSpaceScene() {
         ctx.closePath();
         ctx.fill();
         
-        // Reset composite operation
         ctx.globalCompositeOperation = 'source-over';
         
-        // ========== INNER VOID reinforcement ==========
-        // Draw absolute black on top to ensure it's truly void
+        // Solid black core
         ctx.globalAlpha = totalFade;
         ctx.fillStyle = '#000000';
         ctx.beginPath();
-        ctx.arc(x, y, eventHorizonRadius * 0.85, 0, Math.PI * 2);
+        ctx.arc(x, y, eventHorizonRadius * 0.65, 0, Math.PI * 2);
         ctx.fill();
         
-        // ========== EDGE SHIMMER ==========
-        // Faint flickering at the very edge of the event horizon
-        ctx.globalAlpha = totalFade * 0.4;
-        const shimmerCount = 20;
-        for (let i = 0; i < shimmerCount; i++) {
-            const angle = (i / shimmerCount) * Math.PI * 2;
-            const shimmerPhase = Math.sin(bh.warpPhase * 3 + i * 1.5);
-            
-            if (shimmerPhase > 0.3) {
-                const shimmerRadius = eventHorizonRadius * (0.98 + shimmerPhase * 0.05);
-                const px = x + Math.cos(angle) * shimmerRadius;
-                const py = y + Math.sin(angle) * shimmerRadius;
-                
-                ctx.fillStyle = `rgba(255, 240, 220, ${shimmerPhase * 0.5})`;
-                ctx.beginPath();
-                ctx.arc(px, py, size * 0.02, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
+        // ========== ACCRETION GLOW - subtle warm edge ==========
+        ctx.globalAlpha = totalFade * 0.2;
+        const accretionGrad = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.85, x, y, eventHorizonRadius * 1.4);
+        accretionGrad.addColorStop(0, 'rgba(255, 200, 150, 0.3)');
+        accretionGrad.addColorStop(0.4, 'rgba(255, 180, 130, 0.12)');
+        accretionGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = accretionGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, eventHorizonRadius * 1.4, 0, Math.PI * 2);
+        ctx.fill();
 
         ctx.restore();
     }
@@ -2032,60 +2854,171 @@ function initSpaceScene() {
         const wobbleOffset = Math.sin(enc.wobble) * size * 0.05;
         
         if (enc.shipType === 0) {
-            // Classic UFO saucer with 3D depth
+            // UFO saucer with variance
+            const ufo = enc.ufoStyle || {
+                hull: [75, 80, 90], hullLight: [100, 105, 115], hullDark: [55, 60, 70],
+                domeStyle: 'bubble', rimLightCount: 10, rimLightStyle: 'pulse',
+                saucerShape: 'classic', hasAntenna: false, hasUnderGlow: true, secondaryGlow: null
+            };
+            
+            // Shape dimensions based on saucer style
+            let saucerWidth = 0.6, saucerHeight = 0.15, bottomHeight = 0.12;
+            if (ufo.saucerShape === 'slim') {
+                saucerWidth = 0.7; saucerHeight = 0.1; bottomHeight = 0.08;
+            } else if (ufo.saucerShape === 'thick') {
+                saucerWidth = 0.55; saucerHeight = 0.22; bottomHeight = 0.18;
+            } else if (ufo.saucerShape === 'ringed') {
+                saucerWidth = 0.65; saucerHeight = 0.12; bottomHeight = 0.1;
+            }
             
             // Glow aura underneath
-            const glowGrad = ctx.createRadialGradient(0, wobbleOffset + size * 0.1, 0, 0, wobbleOffset + size * 0.1, size * 1.2);
-            glowGrad.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.5 * pulseIntensity})`);
-            glowGrad.addColorStop(0.4, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.2 * pulseIntensity})`);
-            glowGrad.addColorStop(1, 'transparent');
-            ctx.fillStyle = glowGrad;
-            ctx.beginPath();
-            ctx.arc(0, wobbleOffset + size * 0.1, size * 1.2, 0, Math.PI * 2);
-            ctx.fill();
+            if (ufo.hasUnderGlow) {
+                const glowGrad = ctx.createRadialGradient(0, wobbleOffset + size * 0.1, 0, 0, wobbleOffset + size * 0.1, size * 1.2);
+                glowGrad.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.5 * pulseIntensity})`);
+                glowGrad.addColorStop(0.4, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.2 * pulseIntensity})`);
+                glowGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = glowGrad;
+                ctx.beginPath();
+                ctx.arc(0, wobbleOffset + size * 0.1, size * 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Secondary glow ring (if present)
+            if (ufo.secondaryGlow) {
+                const sg = ufo.secondaryGlow;
+                ctx.strokeStyle = `rgba(${sg[0]}, ${sg[1]}, ${sg[2]}, ${0.3 * pulseIntensity})`;
+                ctx.lineWidth = size * 0.04;
+                ctx.beginPath();
+                ctx.ellipse(0, wobbleOffset, size * (saucerWidth + 0.1), size * (saucerHeight + 0.03), 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Outer ring for ringed saucers
+            if (ufo.saucerShape === 'ringed') {
+                ctx.fillStyle = `rgba(${ufo.hull[0]}, ${ufo.hull[1]}, ${ufo.hull[2]}, 0.6)`;
+                ctx.beginPath();
+                ctx.ellipse(0, wobbleOffset, size * 0.75, size * 0.08, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = `rgba(${ufo.hullLight[0]}, ${ufo.hullLight[1]}, ${ufo.hullLight[2]}, 0.4)`;
+                ctx.lineWidth = size * 0.01;
+                ctx.stroke();
+            }
             
             // Bottom hull (darker, shows depth)
-            ctx.fillStyle = `rgb(45, 50, 60)`;
+            ctx.fillStyle = `rgb(${ufo.hullDark[0] - 10}, ${ufo.hullDark[1] - 10}, ${ufo.hullDark[2] - 10})`;
             ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset + size * 0.05, size * 0.55, size * 0.12, 0, 0, Math.PI);
+            ctx.ellipse(0, wobbleOffset + size * 0.05, size * (saucerWidth - 0.05), size * bottomHeight, 0, 0, Math.PI);
             ctx.fill();
             
             // Main saucer body with metallic gradient
             const bodyGrad = ctx.createLinearGradient(0, wobbleOffset - size * 0.2, 0, wobbleOffset + size * 0.1);
-            bodyGrad.addColorStop(0, 'rgb(100, 105, 115)');
-            bodyGrad.addColorStop(0.4, 'rgb(75, 80, 90)');
-            bodyGrad.addColorStop(1, 'rgb(55, 60, 70)');
+            bodyGrad.addColorStop(0, `rgb(${ufo.hullLight[0]}, ${ufo.hullLight[1]}, ${ufo.hullLight[2]})`);
+            bodyGrad.addColorStop(0.4, `rgb(${ufo.hull[0]}, ${ufo.hull[1]}, ${ufo.hull[2]})`);
+            bodyGrad.addColorStop(1, `rgb(${ufo.hullDark[0]}, ${ufo.hullDark[1]}, ${ufo.hullDark[2]})`);
             ctx.fillStyle = bodyGrad;
             ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset, size * 0.6, size * 0.15, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, wobbleOffset, size * saucerWidth, size * saucerHeight, 0, 0, Math.PI * 2);
             ctx.fill();
             
             // Highlight rim
-            ctx.strokeStyle = 'rgba(150, 155, 165, 0.5)';
+            ctx.strokeStyle = `rgba(${ufo.hullLight[0] + 50}, ${ufo.hullLight[1] + 50}, ${ufo.hullLight[2] + 50}, 0.5)`;
             ctx.lineWidth = size * 0.02;
             ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset - size * 0.02, size * 0.58, size * 0.12, 0, Math.PI * 1.1, Math.PI * 1.9);
+            ctx.ellipse(0, wobbleOffset - size * 0.02, size * (saucerWidth - 0.02), size * (saucerHeight - 0.03), 0, Math.PI * 1.1, Math.PI * 1.9);
             ctx.stroke();
             
-            // Dome with glass effect
-            const domeGrad = ctx.createRadialGradient(
-                -size * 0.08, wobbleOffset - size * 0.15, 0,
-                0, wobbleOffset - size * 0.08, size * 0.25
-            );
-            domeGrad.addColorStop(0, `rgba(${gc[0] + 100}, ${gc[1] + 100}, ${gc[2] + 100}, 0.6)`);
-            domeGrad.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.35)`);
-            domeGrad.addColorStop(1, `rgba(${gc[0] * 0.5}, ${gc[1] * 0.5}, ${gc[2] * 0.5}, 0.3)`);
-            ctx.fillStyle = domeGrad;
-            ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset - size * 0.06, size * 0.22, size * 0.14, 0, Math.PI, Math.PI * 2);
-            ctx.fill();
+            // Dome based on style
+            if (ufo.domeStyle === 'bubble') {
+                const domeGrad = ctx.createRadialGradient(
+                    -size * 0.08, wobbleOffset - size * 0.15, 0,
+                    0, wobbleOffset - size * 0.08, size * 0.25
+                );
+                domeGrad.addColorStop(0, `rgba(${Math.min(255, gc[0] + 100)}, ${Math.min(255, gc[1] + 100)}, ${Math.min(255, gc[2] + 100)}, 0.6)`);
+                domeGrad.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.35)`);
+                domeGrad.addColorStop(1, `rgba(${gc[0] * 0.5}, ${gc[1] * 0.5}, ${gc[2] * 0.5}, 0.3)`);
+                ctx.fillStyle = domeGrad;
+                ctx.beginPath();
+                ctx.ellipse(0, wobbleOffset - size * 0.06, size * 0.22, size * 0.16, 0, Math.PI, Math.PI * 2);
+                ctx.fill();
+            } else if (ufo.domeStyle === 'flat') {
+                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.4)`;
+                ctx.beginPath();
+                ctx.ellipse(0, wobbleOffset - size * 0.04, size * 0.25, size * 0.06, 0, Math.PI, Math.PI * 2);
+                ctx.fill();
+                // Flat dome rim
+                ctx.strokeStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.6)`;
+                ctx.lineWidth = size * 0.015;
+                ctx.beginPath();
+                ctx.ellipse(0, wobbleOffset - size * 0.04, size * 0.25, size * 0.02, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (ufo.domeStyle === 'tall') {
+                const domeGrad = ctx.createRadialGradient(
+                    -size * 0.05, wobbleOffset - size * 0.2, 0,
+                    0, wobbleOffset - size * 0.1, size * 0.2
+                );
+                domeGrad.addColorStop(0, `rgba(${Math.min(255, gc[0] + 100)}, ${Math.min(255, gc[1] + 100)}, ${Math.min(255, gc[2] + 100)}, 0.7)`);
+                domeGrad.addColorStop(0.6, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.4)`);
+                domeGrad.addColorStop(1, `rgba(${gc[0] * 0.5}, ${gc[1] * 0.5}, ${gc[2] * 0.5}, 0.25)`);
+                ctx.fillStyle = domeGrad;
+                ctx.beginPath();
+                ctx.ellipse(0, wobbleOffset - size * 0.08, size * 0.18, size * 0.22, 0, Math.PI, Math.PI * 2);
+                ctx.fill();
+            } else if (ufo.domeStyle === 'segmented') {
+                // Multi-panel dome
+                ctx.fillStyle = `rgba(${ufo.hull[0] + 20}, ${ufo.hull[1] + 20}, ${ufo.hull[2] + 20}, 0.8)`;
+                ctx.beginPath();
+                ctx.ellipse(0, wobbleOffset - size * 0.05, size * 0.2, size * 0.12, 0, Math.PI, Math.PI * 2);
+                ctx.fill();
+                // Dome segments
+                ctx.strokeStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.5)`;
+                ctx.lineWidth = size * 0.01;
+                for (let seg = 0; seg < 4; seg++) {
+                    const segAngle = Math.PI + (seg / 4) * Math.PI;
+                    ctx.beginPath();
+                    ctx.moveTo(0, wobbleOffset - size * 0.05);
+                    ctx.lineTo(Math.cos(segAngle) * size * 0.2, wobbleOffset - size * 0.05 + Math.sin(segAngle) * size * 0.12);
+                    ctx.stroke();
+                }
+                // Top light
+                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.8 * pulseIntensity})`;
+                ctx.beginPath();
+                ctx.arc(0, wobbleOffset - size * 0.16, size * 0.03, 0, Math.PI * 2);
+                ctx.fill();
+            }
             
-            // Rim lights (pulsing)
-            for (let i = 0; i < 10; i++) {
-                const angle = (i / 10) * Math.PI * 2 + enc.pulsePhase * 0.5;
-                const lx = Math.cos(angle) * size * 0.52;
-                const ly = Math.sin(angle) * size * 0.1 + wobbleOffset;
-                const lightBrightness = (Math.sin(angle + enc.pulsePhase) * 0.5 + 0.5) * pulseIntensity;
+            // Antenna (if present)
+            if (ufo.hasAntenna) {
+                ctx.strokeStyle = `rgb(${ufo.hullLight[0]}, ${ufo.hullLight[1]}, ${ufo.hullLight[2]})`;
+                ctx.lineWidth = size * 0.015;
+                ctx.beginPath();
+                ctx.moveTo(0, wobbleOffset - size * (ufo.domeStyle === 'tall' ? 0.28 : 0.18));
+                ctx.lineTo(0, wobbleOffset - size * 0.35);
+                ctx.stroke();
+                // Antenna tip glow
+                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${pulseIntensity})`;
+                ctx.beginPath();
+                ctx.arc(0, wobbleOffset - size * 0.35, size * 0.025, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Rim lights
+            const lightCount = ufo.rimLightCount;
+            for (let i = 0; i < lightCount; i++) {
+                const lightAngle = (i / lightCount) * Math.PI * 2 + enc.pulsePhase * 0.5;
+                const lx = Math.cos(lightAngle) * size * (saucerWidth - 0.08);
+                const ly = Math.sin(lightAngle) * size * (saucerHeight - 0.03) + wobbleOffset;
+                
+                let lightBrightness;
+                if (ufo.rimLightStyle === 'chase') {
+                    // Chasing lights effect
+                    const chasePos = (enc.pulsePhase * 2) % (Math.PI * 2);
+                    const dist = Math.abs(((lightAngle - chasePos + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+                    lightBrightness = Math.max(0.1, 1 - dist / 1.5);
+                } else {
+                    // Pulsing all together or wave
+                    lightBrightness = (Math.sin(lightAngle + enc.pulsePhase) * 0.5 + 0.5) * pulseIntensity;
+                }
+                
                 ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${lightBrightness})`;
                 ctx.beginPath();
                 ctx.arc(lx, ly, size * 0.025, 0, Math.PI * 2);
@@ -2236,7 +3169,7 @@ function initSpaceScene() {
                 ctx.fill();
             }
             
-        } else {
+        } else if (enc.shipType === 3) {
             // Triangular UFO (like Phoenix lights / TR-3B style)
             
             // Bottom glow
@@ -2305,6 +3238,175 @@ function initSpaceScene() {
                 ctx.arc(corner[0], corner[1], size * 0.025, 0, Math.PI * 2);
                 ctx.fill();
             });
+            
+        } else if (enc.shipType === 4) {
+            // Interstellar Endurance - rotating ring station
+            const ringAngle = enc.ringAngle || enc.rotation;
+            
+            // Central hub
+            const hubGrad = ctx.createRadialGradient(0, wobbleOffset, 0, 0, wobbleOffset, size * 0.15);
+            hubGrad.addColorStop(0, 'rgb(180, 185, 195)');
+            hubGrad.addColorStop(0.5, 'rgb(140, 145, 155)');
+            hubGrad.addColorStop(1, 'rgb(100, 105, 115)');
+            ctx.fillStyle = hubGrad;
+            ctx.beginPath();
+            ctx.arc(0, wobbleOffset, size * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main rotating ring
+            ctx.strokeStyle = 'rgb(160, 165, 175)';
+            ctx.lineWidth = size * 0.06;
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleOffset, size * 0.45, size * 0.45 * 0.3, ringAngle, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Ring highlight
+            ctx.strokeStyle = 'rgba(200, 205, 215, 0.6)';
+            ctx.lineWidth = size * 0.02;
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleOffset, size * 0.45, size * 0.45 * 0.3, ringAngle, Math.PI * 0.8, Math.PI * 1.2);
+            ctx.stroke();
+            
+            // Ring shadow
+            ctx.strokeStyle = 'rgba(60, 65, 75, 0.5)';
+            ctx.lineWidth = size * 0.03;
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleOffset, size * 0.45, size * 0.45 * 0.3, ringAngle, Math.PI * 1.8, Math.PI * 2.2);
+            ctx.stroke();
+            
+            // Modules on the ring (12 modules)
+            const moduleCount = 12;
+            for (let m = 0; m < moduleCount; m++) {
+                const modAngle = (m / moduleCount) * Math.PI * 2 + ringAngle;
+                const modX = Math.cos(modAngle) * size * 0.45;
+                const modY = Math.sin(modAngle) * size * 0.45 * 0.3 + wobbleOffset;
+                
+                // Module body
+                ctx.fillStyle = 'rgb(140, 145, 155)';
+                ctx.beginPath();
+                ctx.arc(modX, modY, size * 0.04, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Module window light
+                const windowBrightness = Math.sin(enc.pulsePhase + m * 0.5) * 0.3 + 0.7;
+                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${windowBrightness * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(modX, modY, size * 0.015, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Connecting spokes
+            ctx.strokeStyle = 'rgb(120, 125, 135)';
+            ctx.lineWidth = size * 0.012;
+            for (let s = 0; s < 4; s++) {
+                const spokeAngle = (s / 4) * Math.PI * 2 + ringAngle;
+                const endX = Math.cos(spokeAngle) * size * 0.42;
+                const endY = Math.sin(spokeAngle) * size * 0.42 * 0.3 + wobbleOffset;
+                ctx.beginPath();
+                ctx.moveTo(0, wobbleOffset);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+            
+            // Hub detail - docking port
+            ctx.fillStyle = 'rgb(80, 85, 95)';
+            ctx.beginPath();
+            ctx.arc(0, wobbleOffset, size * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${pulseIntensity * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(0, wobbleOffset, size * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+            
+        } else if (enc.shipType === 5) {
+            // Death Star - large spherical battle station
+            
+            // Main sphere body with gradient
+            const bodyGrad = ctx.createRadialGradient(
+                -size * 0.2, wobbleOffset - size * 0.2, 0,
+                0, wobbleOffset, size * 0.5
+            );
+            bodyGrad.addColorStop(0, 'rgb(140, 145, 150)');
+            bodyGrad.addColorStop(0.4, 'rgb(100, 105, 110)');
+            bodyGrad.addColorStop(0.8, 'rgb(70, 75, 80)');
+            bodyGrad.addColorStop(1, 'rgb(50, 55, 60)');
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            ctx.arc(0, wobbleOffset, size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Equatorial trench
+            ctx.strokeStyle = 'rgb(40, 45, 50)';
+            ctx.lineWidth = size * 0.025;
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleOffset, size * 0.5, size * 0.08, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Trench detail lines
+            ctx.strokeStyle = 'rgb(60, 65, 70)';
+            ctx.lineWidth = size * 0.008;
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleOffset - size * 0.02, size * 0.48, size * 0.06, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleOffset + size * 0.02, size * 0.48, size * 0.06, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Superlaser dish (concave circle in upper hemisphere)
+            const dishX = -size * 0.15;
+            const dishY = wobbleOffset - size * 0.2;
+            
+            // Dish depression
+            ctx.fillStyle = 'rgb(50, 55, 60)';
+            ctx.beginPath();
+            ctx.arc(dishX, dishY, size * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Dish inner ring
+            ctx.strokeStyle = 'rgb(70, 75, 80)';
+            ctx.lineWidth = size * 0.015;
+            ctx.beginPath();
+            ctx.arc(dishX, dishY, size * 0.12, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Dish focusing array
+            ctx.fillStyle = 'rgb(40, 45, 50)';
+            ctx.beginPath();
+            ctx.arc(dishX, dishY, size * 0.06, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Superlaser glow (pulsing)
+            const laserGlow = ctx.createRadialGradient(dishX, dishY, 0, dishX, dishY, size * 0.12);
+            laserGlow.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.6 * pulseIntensity})`);
+            laserGlow.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.2 * pulseIntensity})`);
+            laserGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = laserGlow;
+            ctx.beginPath();
+            ctx.arc(dishX, dishY, size * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Surface detail - panel lines
+            ctx.strokeStyle = 'rgba(60, 65, 70, 0.5)';
+            ctx.lineWidth = size * 0.005;
+            for (let lat = 1; lat < 5; lat++) {
+                const latRadius = size * 0.5 * Math.sin(lat * Math.PI / 5);
+                const latY = wobbleOffset + size * 0.5 * Math.cos(lat * Math.PI / 5);
+                ctx.beginPath();
+                ctx.ellipse(0, latY, latRadius, latRadius * 0.15, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Surface highlight
+            const highlightGrad = ctx.createRadialGradient(
+                -size * 0.25, wobbleOffset - size * 0.25, 0,
+                -size * 0.15, wobbleOffset - size * 0.15, size * 0.3
+            );
+            highlightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+            highlightGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = highlightGrad;
+            ctx.beginPath();
+            ctx.arc(0, wobbleOffset, size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
         }
         
         ctx.restore();
@@ -2388,11 +3490,14 @@ function initSpaceScene() {
         spectrumHue = (spectrumHue + spectrumSpeed) % 360;
 
         drawBackground();
-        
+
+        // Update all gas cloud positions and animations once per frame
+        updateGasClouds();
+
         // Update encounter position first
         updateEncounter();
         const encZ = getEncounterZ();
-        
+
         // Draw clouds behind the encounter (further away, higher z)
         drawGasClouds(encZ > 0 ? encZ : 0, Infinity);
         
