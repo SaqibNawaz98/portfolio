@@ -1571,18 +1571,15 @@ function initSpaceScene() {
             
             cloud.z -= flightSpeed * 3;
             
-            // Skip animations on mobile for performance
-            if (!isMobile) {
-                cloud.wobble += cloud.wobbleSpeed;
-                cloud.rotation += cloud.rotationSpeed;
-                
-                // Update puff animations
-                if (cloud.puffs) {
-                    for (let p = 0; p < cloud.puffs.length; p++) {
-                        const puff = cloud.puffs[p];
-                        puff.driftAngle += puff.driftSpeed * 0.5;
-                        puff.pulsePhase += puff.pulseSpeed * 0.5;
-                    }
+            cloud.wobble += cloud.wobbleSpeed;
+            cloud.rotation += cloud.rotationSpeed;
+            
+            // Update puff animations
+            if (cloud.puffs) {
+                for (let p = 0; p < cloud.puffs.length; p++) {
+                    const puff = cloud.puffs[p];
+                    puff.driftAngle += puff.driftSpeed * 0.5;
+                    puff.pulsePhase += puff.pulseSpeed * 0.5;
                 }
             }
             
@@ -1592,10 +1589,8 @@ function initSpaceScene() {
             }
         }
         
-        // Sort once per frame (skip on mobile to prevent flicker from reordering)
-        if (!isMobile) {
-            gasClouds.sort((a, b) => b.z - a.z);
-        }
+        // Sort once per frame
+        gasClouds.sort((a, b) => b.z - a.z);
     }
 
     function drawGasClouds(minZ = 0, maxZ = Infinity) {
@@ -1653,7 +1648,7 @@ function initSpaceScene() {
             // Generate puffs if needed (reduced on mobile for performance)
             if (!cloud.puffs) {
                 cloud.puffs = [];
-                const clusterCount = isMobile ? (3 + Math.floor(Math.random() * 2)) : (5 + Math.floor(Math.random() * 4));
+                const clusterCount = 5 + Math.floor(Math.random() * 4);
                 
                 for (let c = 0; c < clusterCount; c++) {
                     const clusterAngle = (c / clusterCount) * Math.PI * 2 + Math.random() * 0.5;
@@ -1674,8 +1669,7 @@ function initSpaceScene() {
                         pulseAmount: 0.1 + Math.random() * 0.15,
                     });
                     
-                    // Fewer sub-puffs on mobile
-                    const subPuffs = isMobile ? (1 + Math.floor(Math.random() * 2)) : (3 + Math.floor(Math.random() * 3));
+                    const subPuffs = 3 + Math.floor(Math.random() * 3);
                     for (let s = 0; s < subPuffs; s++) {
                         const subAngle = Math.random() * Math.PI * 2;
                         const subDist = clusterSize * (0.3 + Math.random() * 0.4);
@@ -1716,12 +1710,8 @@ function initSpaceScene() {
 
             ctx.save();
             ctx.translate(x, y);
-            
-            // Skip rotation/stretch transforms on mobile
-            if (!isMobile) {
-                ctx.rotate(cloud.rotation);
-                ctx.scale(1, cloud.stretch);
-            }
+            ctx.rotate(cloud.rotation);
+            ctx.scale(1, cloud.stretch);
             
             // Draw all puffs with uniform opacity
             const puffs = cloud.puffs;
@@ -1731,27 +1721,19 @@ function initSpaceScene() {
             for (let p = 0; p < puffCount; p++) {
                 const puff = puffs[p];
                 
-                // On mobile: use static positions, no drift/pulse animations
-                let puffX, puffY, puffRadius;
-                if (isMobile) {
-                    puffX = puff.baseX * radius;
-                    puffY = puff.baseY * radius;
-                    puffRadius = radius * puff.size;
-                } else {
-                    // Desktop: use animated drift positions
-                    const driftX = Math.cos(puff.driftAngle) * puff.driftRadius * 0.5;
-                    const driftY = Math.sin(puff.driftAngle) * puff.driftRadius * 0.3;
-                    const animatedX = puff.baseX + driftX;
-                    const animatedY = puff.baseY + driftY;
-                    puffX = animatedX * radius;
-                    puffY = animatedY * radius;
-                    const pulseAmount = puff.pulseAmount * 0.5;
-                    const pulse = 1 + Math.sin(puff.pulsePhase) * pulseAmount;
-                    puffRadius = radius * puff.size * pulse;
-                }
+                // Animated drift positions
+                const driftX = Math.cos(puff.driftAngle) * puff.driftRadius * 0.5;
+                const driftY = Math.sin(puff.driftAngle) * puff.driftRadius * 0.3;
+                const animatedX = puff.baseX + driftX;
+                const animatedY = puff.baseY + driftY;
+                const puffX = animatedX * radius;
+                const puffY = animatedY * radius;
+                const pulseAmount = puff.pulseAmount * 0.5;
+                const pulse = 1 + Math.sin(puff.pulsePhase) * pulseAmount;
+                const puffRadius = radius * puff.size * pulse;
                 
-                // Skip if too small (higher threshold on mobile)
-                if (puffRadius < (isMobile ? 8 : 4)) continue;
+                // Skip if too small
+                if (puffRadius < 4) continue;
                 
                 // Color blending (use base positions for consistency)
                 const blendFactor = (puff.baseX + puff.baseY + 1) * 0.5;
@@ -1791,29 +1773,27 @@ function initSpaceScene() {
                 ctx.fill();
             }
             
-            // Smooth highlight/glow intensity based on LOD (skip on mobile for performance)
-            if (!isMobile) {
-                const effectIntensity = Math.max(0, (lodFactor - 0.3) / 0.7);
+            // Smooth highlight/glow intensity based on LOD
+            const effectIntensity = Math.max(0, (lodFactor - 0.3) / 0.7);
+            
+            if (effectIntensity > 0.01) {
+                const highlightGrad = ctx.createRadialGradient(-radius * 0.2, -radius * 0.25, 0, 0, 0, radius * 0.5);
+                highlightGrad.addColorStop(0, `rgba(255,255,255,${baseOpacity * 0.12 * effectIntensity})`);
+                highlightGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = highlightGrad;
+                ctx.beginPath();
+                ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
+                ctx.fill();
                 
-                if (effectIntensity > 0.01) {
-                    const highlightGrad = ctx.createRadialGradient(-radius * 0.2, -radius * 0.25, 0, 0, 0, radius * 0.5);
-                    highlightGrad.addColorStop(0, `rgba(255,255,255,${baseOpacity * 0.12 * effectIntensity})`);
-                    highlightGrad.addColorStop(1, 'transparent');
-                    ctx.fillStyle = highlightGrad;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    const glowRadius = radius * (1.1 + effectIntensity * 0.15);
-                    const glowGrad = ctx.createRadialGradient(0, 0, radius * 0.5, 0, 0, glowRadius);
-                    glowGrad.addColorStop(0, 'transparent');
-                    glowGrad.addColorStop(0.5, `rgba(${primaryColor[0]},${primaryColor[1]},${primaryColor[2]},${baseOpacity * 0.1 * effectIntensity})`);
-                    glowGrad.addColorStop(1, 'transparent');
-                    ctx.fillStyle = glowGrad;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
-                    ctx.fill();
-                }
+                const glowRadius = radius * (1.1 + effectIntensity * 0.15);
+                const glowGrad = ctx.createRadialGradient(0, 0, radius * 0.5, 0, 0, glowRadius);
+                glowGrad.addColorStop(0, 'transparent');
+                glowGrad.addColorStop(0.5, `rgba(${primaryColor[0]},${primaryColor[1]},${primaryColor[2]},${baseOpacity * 0.1 * effectIntensity})`);
+                glowGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = glowGrad;
+                ctx.beginPath();
+                ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+                ctx.fill();
             }
 
             ctx.restore();

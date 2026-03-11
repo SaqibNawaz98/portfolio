@@ -472,6 +472,12 @@
     transition: all var(--transition-base);
 }
 
+@media (max-width: 768px) {
+    .hero__scroll {
+        display: none;
+    }
+}
+
 
 
 /* ================================
