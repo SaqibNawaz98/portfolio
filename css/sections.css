@@ -409,6 +409,13 @@
     border: none;
     outline: none;
     display: block;
+    /* Mobile performance optimizations */
+    touch-action: pan-y;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    will-change: contents;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
 }
 
 .hero__scroll {

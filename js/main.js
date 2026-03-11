@@ -313,7 +313,16 @@ function initSpaceScene() {
     const canvas = document.getElementById('spaceCanvas');
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    // Mobile detection for performance optimization
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || window.innerWidth < 768;
+
+    // Get context with performance hints
+    const ctx = canvas.getContext('2d', { 
+        alpha: false,
+        desynchronized: isMobile
+    });
+    
     let width, height, centerX, centerY;
     let animationId;
     let time = 0;
@@ -322,10 +331,6 @@ function initSpaceScene() {
     const flightSpeed = 0.8;
 
     // 3D Stars flying past
-    // Mobile detection for performance optimization
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-        || window.innerWidth < 768;
-
     const stars = [];
     const starCount = isMobile ? 200 : 400;
     const starDepth = 1500;
@@ -5096,4 +5101,26 @@ function initSpaceScene() {
         if (document.hidden) cancelAnimationFrame(animationId);
         else animate();
     });
+
+    // Mobile: pause animation during scroll/touch to prevent flicker
+    if (isMobile) {
+        let scrollTimeout;
+        let isScrolling = false;
+        
+        const pauseAnimation = () => {
+            if (!isScrolling) {
+                isScrolling = true;
+                cancelAnimationFrame(animationId);
+            }
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                isScrolling = false;
+                animate();
+            }, 150);
+        };
+        
+        window.addEventListener('scroll', pauseAnimation, { passive: true });
+        canvas.addEventListener('touchstart', pauseAnimation, { passive: true });
+        canvas.addEventListener('touchmove', pauseAnimation, { passive: true });
+    }
 }
