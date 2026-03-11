@@ -409,10 +409,9 @@
     border: none;
     outline: none;
     display: block;
+    /* Ignore all touch/pointer events - let them pass through to scroll */
+    pointer-events: none;
     /* Mobile performance optimizations */
-    touch-action: pan-y;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: transparent;
     will-change: contents;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);

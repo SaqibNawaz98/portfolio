@@ -5101,26 +5101,4 @@ function initSpaceScene() {
         if (document.hidden) cancelAnimationFrame(animationId);
         else animate();
     });
-
-    // Mobile: pause animation during scroll/touch to prevent flicker
-    if (isMobile) {
-        let scrollTimeout;
-        let isScrolling = false;
-        
-        const pauseAnimation = () => {
-            if (!isScrolling) {
-                isScrolling = true;
-                cancelAnimationFrame(animationId);
-            }
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                isScrolling = false;
-                animate();
-            }, 150);
-        };
-        
-        window.addEventListener('scroll', pauseAnimation, { passive: true });
-        canvas.addEventListener('touchstart', pauseAnimation, { passive: true });
-        canvas.addEventListener('touchmove', pauseAnimation, { passive: true });
-    }
 }
