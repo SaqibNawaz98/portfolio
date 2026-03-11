@@ -361,8 +361,8 @@ function initSpaceScene() {
         const newWidth = window.innerWidth;
         const newHeight = window.innerHeight;
         
-        // On mobile, only reinitialize if width changed (ignore height changes from address bar)
-        const widthChanged = Math.abs(newWidth - lastWidth) > 50;
+        // On mobile, only reinitialize if width changed significantly (ignore height changes from address bar)
+        const widthChanged = Math.abs(newWidth - lastWidth) > (isMobile ? 100 : 50);
         const heightChanged = Math.abs(newHeight - lastHeight) > 50;
         const needsReinit = isMobile ? widthChanged : (widthChanged || heightChanged);
         
@@ -1590,8 +1590,10 @@ function initSpaceScene() {
             }
         }
         
-        // Sort once per frame (not per render pass)
-        gasClouds.sort((a, b) => b.z - a.z);
+        // Sort once per frame (skip on mobile to prevent flicker from reordering)
+        if (!isMobile) {
+            gasClouds.sort((a, b) => b.z - a.z);
+        }
     }
 
     function drawGasClouds(minZ = 0, maxZ = Infinity) {
