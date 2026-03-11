@@ -89,6 +89,7 @@ jobs:
           sed -i 's/<p class="footer__version">v[0-9]*\.[0-9]*\.[0-9]*<\/p>/<p class="footer__version">v'"$NEW_VERSION"'<\/p>/' index.html
           
       - name: Commit and tag
+        id: commit_tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -96,12 +97,46 @@ jobs:
           # Check if there are changes to commit
           if git diff --quiet VERSION; then
             echo "No version change needed"
+            echo "skipped=true" >> $GITHUB_OUTPUT
             exit 0
           fi
           
           NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
           
-          git add VERSION
+          git add VERSION index.html
           git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
           git tag -a "v${NEW_VERSION}" -m "Version ${NEW_VERSION}"
           git push origin main --tags
+          echo "skipped=false" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        if: steps.commit_tag.outputs.skipped != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          BUMP="${{ steps.bump_type.outputs.bump }}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          
+          # Generate release notes based on bump type
+          case $BUMP in
+            major)
+              RELEASE_TITLE="🚀 Major Release v${NEW_VERSION}"
+              ;;
+            minor)
+              RELEASE_TITLE="✨ Feature Release v${NEW_VERSION}"
+              ;;
+            patch)
+              RELEASE_TITLE="🐛 Patch Release v${NEW_VERSION}"
+              ;;
+          esac
+          
+          # Create release with auto-generated notes
+          gh release create "v${NEW_VERSION}" \
+            --title "${RELEASE_TITLE}" \
+            --notes "## What's Changed
+
+${COMMIT_MSG}
+
+**Full Changelog**: https://github.com/${{ github.repository }}/compare/v${{ steps.current_version.outputs.version }}...v${NEW_VERSION}" \
+            --latest

@@ -417,17 +417,17 @@ function initSpaceScene() {
         let x, y, z;
         
         if (initialSpawn) {
-            // Initial spawn - visible immediately, will fly past
+            // Initial spawn - visible immediately, will fly past but avoid center
             z = 300 + Math.random() * 400;
             const angle = Math.random() * Math.PI * 2;
-            const dist = 50 + Math.random() * 150; // Small offset so it's near center
+            const dist = 120 + Math.random() * 150; // Minimum offset to avoid center
             x = Math.cos(angle) * dist;
             y = Math.sin(angle) * dist;
         } else {
-            // Spawn far away - small world position so it appears near center at distance
+            // Spawn far away - offset from center so it passes to the side
             z = 1000 + Math.random() * 400;
             const angle = Math.random() * Math.PI * 2;
-            const dist = 50 + Math.random() * 200; // Small world offset
+            const dist = 80 + Math.random() * 180; // Offset ensures it won't hit center
             x = Math.cos(angle) * dist;
             y = Math.sin(angle) * dist;
         }
@@ -478,7 +478,7 @@ function initSpaceScene() {
     function createBlackHole() {
         const spawnZ = 1000 + Math.random() * 400;
         const angle = Math.random() * Math.PI * 2;
-        const dist = 30 + Math.random() * 150;
+        const dist = 80 + Math.random() * 150; // Avoid center
         
         return {
             type: 'blackHole',
@@ -501,6 +501,17 @@ function initSpaceScene() {
         for (let i = 0; i < pieceCount; i++) {
             const pieceAngle = Math.random() * Math.PI * 2;
             const pieceDist = Math.random() * 0.8;
+            
+            // Pre-generate the shape vertices so they don't flicker every frame
+            const sides = 4 + Math.floor(Math.random() * 3);
+            const vertices = [];
+            for (let v = 0; v < sides; v++) {
+                vertices.push({
+                    angle: (v / sides) * Math.PI * 2,
+                    radius: 0.6 + Math.random() * 0.4
+                });
+            }
+            
             pieces.push({
                 x: Math.cos(pieceAngle) * pieceDist,
                 y: Math.sin(pieceAngle) * pieceDist,
@@ -508,6 +519,7 @@ function initSpaceScene() {
                 rotation: Math.random() * Math.PI * 2,
                 rotSpeed: (Math.random() - 0.5) * 0.05,
                 color: Math.random() > 0.3 ? [80, 80, 90] : [60, 50, 40],
+                vertices: vertices,
             });
         }
         
@@ -526,7 +538,7 @@ function initSpaceScene() {
     function createSpaceStation() {
         const spawnZ = 1000 + Math.random() * 400;
         const angle = Math.random() * Math.PI * 2;
-        const dist = 30 + Math.random() * 150;
+        const dist = 100 + Math.random() * 150; // Avoid center
         
         // Station configuration
         const moduleCount = 3 + Math.floor(Math.random() * 3);
@@ -552,20 +564,51 @@ function initSpaceScene() {
         };
     }
 
+    function createProminentStar() {
+        const spawnZ = 1000 + Math.random() * 400;
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 90 + Math.random() * 140; // Avoid center
+        
+        // Star types - subtle, smaller sizes
+        const prominentStarTypes = [
+            { name: 'blue', color: [140, 170, 255], coronaColor: [100, 140, 255], size: 25 + Math.random() * 20 },
+            { name: 'red', color: [255, 140, 100], coronaColor: [255, 100, 60], size: 30 + Math.random() * 25 },
+            { name: 'white', color: [255, 255, 255], coronaColor: [200, 220, 255], size: 20 + Math.random() * 15 },
+            { name: 'yellow', color: [255, 240, 180], coronaColor: [255, 200, 100], size: 25 + Math.random() * 20 },
+            { name: 'orange', color: [255, 180, 100], coronaColor: [255, 140, 60], size: 28 + Math.random() * 22 },
+        ];
+        
+        const starType = prominentStarTypes[Math.floor(Math.random() * prominentStarTypes.length)];
+        
+        return {
+            type: 'prominentStar',
+            x: Math.cos(angle) * dist,
+            y: Math.sin(angle) * dist,
+            z: spawnZ,
+            baseSize: starType.size,
+            starType: starType.name,
+            color: starType.color,
+            coronaColor: starType.coronaColor,
+            pulsePhase: Math.random() * Math.PI * 2,
+        };
+    }
+
     function createAlienShip() {
         const spawnZ = 1000 + Math.random() * 400;
         const angle = Math.random() * Math.PI * 2;
-        const dist = 30 + Math.random() * 150;
+        const dist = 100 + Math.random() * 150; // Avoid center
         
-        // Alien ship variations
-        const shipType = Math.floor(Math.random() * 4); // 0: saucer, 1: angular, 2: organic, 3: crystalline
+        // Ship types: 0: classic UFO saucer, 1: space shuttle, 2: tic-tac UFO, 3: triangular UFO
+        const shipType = Math.floor(Math.random() * 4);
+        
+        // Glow colors for UFOs, engine colors for shuttles
         const glowColors = [
             [100, 255, 200], // Cyan-green
             [255, 100, 255], // Magenta
             [100, 200, 255], // Light blue
-            [255, 200, 100], // Gold
+            [255, 150, 50],  // Orange (engine)
         ];
-        const glowColor = glowColors[Math.floor(Math.random() * glowColors.length)];
+        const glowColor = shipType === 1 ? [255, 150, 50] : glowColors[Math.floor(Math.random() * glowColors.length)];
         
         return {
             type: 'alienShip',
@@ -575,25 +618,25 @@ function initSpaceScene() {
             baseSize: 40 + Math.random() * 50,
             shipType,
             glowColor,
-            rotation: Math.random() * Math.PI * 2,
-            rotSpeed: (Math.random() - 0.5) * 0.008,
+            rotation: 0, // Ships always appear right side up
+            rotSpeed: 0, // No rotation for ships
             pulsePhase: Math.random() * Math.PI * 2,
             wobble: Math.random() * Math.PI * 2,
         };
     }
 
     function createRandomEncounter() {
-        // Weighted random selection - planets most common, black holes rarest
+        // Weighted random selection
         const roll = Math.random();
         let type;
         
-        if (roll < 0.45) {
+        if (roll < 0.35) {
             type = 'planet';
-        } else if (roll < 0.65) {
-            type = 'debris';
-        } else if (roll < 0.80) {
+        } else if (roll < 0.55) {
+            type = 'prominentStar';
+        } else if (roll < 0.70) {
             type = 'spaceStation';
-        } else if (roll < 0.93) {
+        } else if (roll < 0.88) {
             type = 'alienShip';
         } else {
             type = 'blackHole';
@@ -601,15 +644,15 @@ function initSpaceScene() {
         
         // Avoid same type twice in a row
         if (type === lastEncounterType && Math.random() > 0.3) {
-            const types = ['planet', 'debris', 'spaceStation', 'alienShip', 'blackHole'];
+            const types = ['planet', 'prominentStar', 'spaceStation', 'alienShip', 'blackHole'];
             type = types[Math.floor(Math.random() * types.length)];
         }
         lastEncounterType = type;
         
         switch (type) {
             case 'planet': return createPlanet();
+            case 'prominentStar': return createProminentStar();
             case 'blackHole': return createBlackHole();
-            case 'debris': return createDebris();
             case 'spaceStation': return createSpaceStation();
             case 'alienShip': return createAlienShip();
             default: return createPlanet();
@@ -708,7 +751,7 @@ function initSpaceScene() {
         ctx.fillRect(0, 0, width, height);
     }
 
-    function drawGasClouds() {
+    function drawGasClouds(minZ = 0, maxZ = Infinity) {
         // Sort by depth (far to near)
         gasClouds.sort((a, b) => b.z - a.z);
 
@@ -719,23 +762,42 @@ function initSpaceScene() {
         for (let i = 0; i < gasClouds.length; i++) {
             const cloud = gasClouds[i];
             
-            cloud.z -= flightSpeed * 3;
+            // Only update z position on first pass (when drawing far clouds)
+            if (minZ === 0) {
+                cloud.z -= flightSpeed * 3;
+            }
+            
+            // Skip clouds outside our z-range for this pass
+            if (cloud.z < minZ || cloud.z > maxZ) {
+                // Still update animation state even if not drawing
+                if (minZ === 0) {
+                    cloud.wobble += cloud.wobbleSpeed;
+                    cloud.rotation += cloud.rotationSpeed;
+                }
+                continue;
+            }
             
             // Early exit for invisible clouds
             if (cloud.z > maxVisibleZ) {
-                cloud.wobble += cloud.wobbleSpeed;
-                cloud.rotation += cloud.rotationSpeed;
+                if (minZ === 0) {
+                    cloud.wobble += cloud.wobbleSpeed;
+                    cloud.rotation += cloud.rotationSpeed;
+                }
                 continue;
             }
 
             // Reset if cloud passed through viewer
             if (cloud.z < 20) {
-                resetGasCloud(cloud);
+                if (minZ === 0) {
+                    resetGasCloud(cloud);
+                }
                 continue;
             }
 
-            cloud.wobble += cloud.wobbleSpeed;
-            cloud.rotation += cloud.rotationSpeed;
+            if (minZ === 0) {
+                cloud.wobble += cloud.wobbleSpeed;
+                cloud.rotation += cloud.rotationSpeed;
+            }
 
             // 3D projection
             const scale = 400 / cloud.z;
@@ -1102,8 +1164,8 @@ function initSpaceScene() {
         }
     }
 
-    // Unified encounter system - handles planets, black holes, debris, stations, ships
-    function drawEncounters() {
+    // Update encounter position and state (separate from drawing for z-ordering)
+    function updateEncounter() {
         // Spawn new encounter if none exists
         if (!currentEncounter && Math.random() < encounterSpawnChance) {
             currentEncounter = createRandomEncounter();
@@ -1120,11 +1182,44 @@ function initSpaceScene() {
         if (enc.pulsePhase !== undefined) enc.pulsePhase += 0.03;
         if (enc.wobble !== undefined) enc.wobble += 0.02;
         if (enc.lightPhase !== undefined) enc.lightPhase += 0.05;
+        if (enc.flarePhase !== undefined) enc.flarePhase += 0.015;
         
         // Update debris piece rotations
         if (enc.pieces) {
             enc.pieces.forEach(p => p.rotation += p.rotSpeed);
         }
+        
+        // Center avoidance - push encounters away from center as they get closer
+        // This ensures we never fly "through" a planet or station
+        const encType = enc.encounterType || enc.type;
+        if (encType !== 'blackHole') { // Black holes can be more centered for dramatic effect
+            const distFromCenter = Math.sqrt(enc.x * enc.x + enc.y * enc.y);
+            const minDist = 60; // Minimum world-space distance from center
+            
+            // The closer the encounter (lower z), the stronger the push
+            const proximityFactor = Math.max(0, 1 - enc.z / 800);
+            
+            if (distFromCenter < minDist + proximityFactor * 80) {
+                // Calculate push direction (away from center)
+                const pushAngle = Math.atan2(enc.y, enc.x);
+                const pushStrength = (1 - distFromCenter / (minDist + 80)) * proximityFactor * 2;
+                
+                enc.x += Math.cos(pushAngle) * pushStrength;
+                enc.y += Math.sin(pushAngle) * pushStrength;
+            }
+        }
+    }
+    
+    // Get current encounter z for z-ordering with clouds
+    function getEncounterZ() {
+        return currentEncounter ? currentEncounter.z : -1;
+    }
+
+    // Unified encounter system - handles planets, black holes, debris, stations, ships
+    function drawEncounters() {
+        if (!currentEncounter) return;
+        
+        const enc = currentEncounter;
         
         // 3D projection
         const scale = 400 / Math.max(20, enc.z);
@@ -1162,6 +1257,9 @@ function initSpaceScene() {
         switch (encType) {
             case 'planet':
                 drawPlanetEncounter(enc, x, y, size, totalFade);
+                break;
+            case 'prominentStar':
+                drawProminentStarEncounter(enc, x, y, size, totalFade);
                 break;
             case 'blackHole':
                 drawBlackHoleEncounter(enc, x, y, size, totalFade);
@@ -1530,244 +1628,245 @@ function initSpaceScene() {
         ctx.restore();
     }
 
-    function drawBlackHoleEncounter(bh, x, y, size, totalFade) {
+    function drawProminentStarEncounter(star, x, y, size, totalFade) {
         ctx.save();
         ctx.globalAlpha = totalFade;
+        
+        const c = star.color;
+        const cc = star.coronaColor;
+        const pulseIntensity = 0.92 + Math.sin(star.pulsePhase) * 0.08;
+        
+        // Soft outer glow
+        const glowSize = size * 1.8;
+        const glowGrad = ctx.createRadialGradient(x, y, size * 0.2, x, y, glowSize);
+        glowGrad.addColorStop(0, `rgba(${cc[0]}, ${cc[1]}, ${cc[2]}, ${0.25 * pulseIntensity})`);
+        glowGrad.addColorStop(0.4, `rgba(${cc[0]}, ${cc[1]}, ${cc[2]}, ${0.1 * pulseIntensity})`);
+        glowGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Subtle light spikes (4 pointed star effect)
+        ctx.globalAlpha = totalFade * 0.25;
+        const spikeLength = size * 1.2;
+        for (let i = 0; i < 4; i++) {
+            const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+            const spikeGrad = ctx.createLinearGradient(
+                x, y,
+                x + Math.cos(angle) * spikeLength,
+                y + Math.sin(angle) * spikeLength
+            );
+            spikeGrad.addColorStop(0, `rgba(255, 255, 255, 0.5)`);
+            spikeGrad.addColorStop(0.5, `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.15)`);
+            spikeGrad.addColorStop(1, 'transparent');
             
-            // Disk inclination angle (tilted accretion disk view)
-            const diskTilt = 0.25; // 0 = edge-on, 1 = face-on
-            const diskRotation = bh.warpPhase * 0.3;
-
-            // ========== GRAVITATIONAL LENSING EFFECT ==========
-            // Einstein ring - light bent around the black hole
-            const lensRings = 6;
-            for (let ring = 0; ring < lensRings; ring++) {
-                const ringRadius = size * (2.8 - ring * 0.25);
-                const ringIntensity = (ring + 1) / lensRings;
-                const distortAmount = size * 0.15 * ringIntensity;
-                
-                ctx.beginPath();
-                const segments = 80;
-                for (let s = 0; s <= segments; s++) {
-                    const angle = (s / segments) * Math.PI * 2;
-                    // Gravitational distortion - light bends more near the hole
-                    const gravDistort = Math.sin(angle * 2 + bh.warpPhase) * distortAmount * 0.5;
-                    const px = x + Math.cos(angle) * (ringRadius + gravDistort);
-                    const py = y + Math.sin(angle) * (ringRadius * diskTilt + gravDistort * 0.3);
-                    
-                    if (s === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
-                }
-                ctx.closePath();
-                
-                const lensOpacity = 0.04 * ringIntensity;
-                ctx.strokeStyle = `rgba(180, 200, 255, ${lensOpacity})`;
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-            }
-
-            // ========== ACCRETION DISK - BACK HALF ==========
-            // Draw the back half of the disk first (behind the black hole)
-            ctx.globalAlpha = totalFade * 0.9;
-            
-            const diskInnerRadius = size * 1.15;
-            const diskOuterRadius = size * 3.2;
-            
-            // Back half of disk
-            for (let layer = 0; layer < 20; layer++) {
-                const t = layer / 20;
-                const layerRadius = diskInnerRadius + (diskOuterRadius - diskInnerRadius) * t;
-                const layerWidth = (diskOuterRadius - diskInnerRadius) / 15;
-                
-                ctx.beginPath();
-                // Only draw back arc (PI to 2*PI relative to disk rotation)
-                const arcStart = Math.PI + diskRotation;
-                const arcEnd = Math.PI * 2 + diskRotation;
-                
-                for (let s = 0; s <= 40; s++) {
-                    const angle = arcStart + (s / 40) * Math.PI;
-                    const wobble = Math.sin(angle * 8 + bh.warpPhase * 2 + layer * 0.3) * size * 0.008;
-                    const px = x + Math.cos(angle) * (layerRadius + wobble);
-                    const py = y + Math.sin(angle) * (layerRadius * diskTilt + wobble * 0.2);
-                    
-                    if (s === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
-                }
-                
-                // Disk color - hot inner region (white/blue) to cooler outer (orange/red)
-                const heat = 1 - t;
-                const r = Math.round(255 - heat * 50);
-                const g = Math.round(150 + heat * 80 - t * 100);
-                const b = Math.round(100 + heat * 155 - t * 80);
-                
-                // Doppler effect - approaching side brighter
-                const dopplerOpacity = 0.15 * (1 - t * 0.6);
-                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${dopplerOpacity})`;
-                ctx.lineWidth = layerWidth;
-                ctx.stroke();
-            }
-
-            // ========== EVENT HORIZON (THE VOID) ==========
-            ctx.globalAlpha = totalFade;
-            
-            // Dark void with subtle edge
-            const voidGrad = ctx.createRadialGradient(x, y, 0, x, y, size * 1.12);
-            voidGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
-            voidGrad.addColorStop(0.75, 'rgba(0, 0, 0, 1)');
-            voidGrad.addColorStop(0.88, 'rgba(0, 0, 0, 0.99)');
-            voidGrad.addColorStop(0.96, 'rgba(5, 5, 10, 0.95)');
-            voidGrad.addColorStop(1, 'rgba(10, 10, 20, 0)');
-            ctx.fillStyle = voidGrad;
+            ctx.strokeStyle = spikeGrad;
+            ctx.lineWidth = size * 0.04;
             ctx.beginPath();
-            ctx.arc(x, y, size * 1.12, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + Math.cos(angle) * spikeLength, y + Math.sin(angle) * spikeLength);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = totalFade;
+        
+        // Main star body
+        const bodyGrad = ctx.createRadialGradient(x - size * 0.1, y - size * 0.1, 0, x, y, size * 0.5);
+        bodyGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        bodyGrad.addColorStop(0.4, `rgba(${Math.min(255, c[0] + 30)}, ${Math.min(255, c[1] + 30)}, ${Math.min(255, c[2] + 30)}, 0.95)`);
+        bodyGrad.addColorStop(0.8, `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.9)`);
+        bodyGrad.addColorStop(1, `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.7)`);
+        ctx.fillStyle = bodyGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.45 * pulseIntensity, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Bright center highlight
+        ctx.globalAlpha = totalFade * 0.7;
+        const coreGrad = ctx.createRadialGradient(x - size * 0.05, y - size * 0.05, 0, x, y, size * 0.2);
+        coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        coreGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
 
-            // ========== PHOTON SPHERE ==========
-            // The bright ring where light orbits - key feature of realistic black holes
-            ctx.globalAlpha = totalFade;
-            
-            // Multiple thin photon rings for realism
-            for (let pr = 0; pr < 3; pr++) {
-                const photonRadius = size * (1.04 + pr * 0.025);
-                const photonOpacity = 0.6 - pr * 0.15;
-                
-                ctx.beginPath();
-                const photonSegments = 80;
-                for (let s = 0; s <= photonSegments; s++) {
-                    const angle = (s / photonSegments) * Math.PI * 2;
-                    // Slight warping
-                    const wobble = Math.sin(angle * 4 + bh.warpPhase * 1.5) * size * 0.008;
-                    const px = x + Math.cos(angle) * (photonRadius + wobble);
-                    const py = y + Math.sin(angle) * (photonRadius * (0.85 + diskTilt * 0.15) + wobble * 0.3);
-                    
-                    if (s === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
-                }
-                ctx.closePath();
-                
-                ctx.shadowColor = `rgba(255, 220, 180, ${photonOpacity * 0.8})`;
-                ctx.shadowBlur = 8 - pr * 2;
-                ctx.strokeStyle = `rgba(255, 240, 220, ${photonOpacity})`;
-                ctx.lineWidth = 2 - pr * 0.5;
-                ctx.stroke();
-            }
-            ctx.shadowBlur = 0;
-
-            // ========== ACCRETION DISK - FRONT HALF ==========
-            // Draw the front half on top (in front of the black hole)
-            ctx.globalAlpha = totalFade;
-            
-            for (let layer = 0; layer < 25; layer++) {
-                const t = layer / 25;
-                const layerRadius = diskInnerRadius + (diskOuterRadius - diskInnerRadius) * t;
-                const layerWidth = (diskOuterRadius - diskInnerRadius) / 18;
-                
-                ctx.beginPath();
-                // Only draw front arc (0 to PI relative to disk rotation)
-                const arcStart = diskRotation;
-                const arcEnd = Math.PI + diskRotation;
-                
-                for (let s = 0; s <= 50; s++) {
-                    const angle = arcStart + (s / 50) * Math.PI;
-                    const wobble = Math.sin(angle * 8 + bh.warpPhase * 2 + layer * 0.3) * size * 0.012;
-                    // Turbulence in the disk
-                    const turbulence = Math.sin(angle * 15 + bh.warpPhase * 3) * size * 0.004 * (1 - t);
-                    const px = x + Math.cos(angle) * (layerRadius + wobble + turbulence);
-                    const py = y + Math.sin(angle) * (layerRadius * diskTilt + wobble * 0.2);
-                    
-                    if (s === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
-                }
-                
-                // Brighter colors for front (Doppler boosted, approaching)
-                const heat = 1 - t;
-                const dopplerBoost = 1.3; // Relativistic Doppler brightening
-                const r = Math.round(Math.min(255, (255 - heat * 30) * dopplerBoost));
-                const g = Math.round(Math.min(255, (180 + heat * 60 - t * 80) * dopplerBoost));
-                const b = Math.round(Math.min(255, (120 + heat * 135 - t * 60)));
-                
-                const frontOpacity = 0.25 * (1 - t * 0.5);
-                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${frontOpacity})`;
-                ctx.lineWidth = layerWidth;
-                ctx.stroke();
-            }
-
-            // ========== HOT INNER DISK GLOW ==========
-            ctx.globalAlpha = totalFade * 0.7;
-            const innerGlow = ctx.createRadialGradient(x, y - size * diskTilt * 0.3, size * 0.8, x, y, size * 1.8);
-            innerGlow.addColorStop(0, 'rgba(255, 200, 150, 0.3)');
-            innerGlow.addColorStop(0.3, 'rgba(255, 180, 120, 0.15)');
-            innerGlow.addColorStop(0.6, 'rgba(255, 150, 100, 0.05)');
-            innerGlow.addColorStop(1, 'transparent');
-            ctx.fillStyle = innerGlow;
-            ctx.beginPath();
-            ctx.ellipse(x, y, size * 1.8, size * 1.8 * diskTilt, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // ========== RELATIVISTIC JETS (subtle) ==========
-            ctx.globalAlpha = totalFade * 0.25;
-            const jetLength = size * 4;
-            
-            // Top jet
-            const topJetGrad = ctx.createLinearGradient(x, y, x, y - jetLength);
-            topJetGrad.addColorStop(0, 'rgba(150, 180, 255, 0.4)');
-            topJetGrad.addColorStop(0.3, 'rgba(120, 150, 220, 0.2)');
-            topJetGrad.addColorStop(1, 'transparent');
+    function drawBlackHoleEncounter(bh, x, y, size, totalFade) {
+        ctx.save();
+        
+        const eventHorizonRadius = size * 0.9;
+        const warpZoneRadius = size * 2.2;
+        
+        // ========== GRAVITATIONAL WARPING EFFECT ==========
+        // Draw warped/distorted rings around the event horizon
+        ctx.globalAlpha = totalFade;
+        
+        // Distortion rings - light being bent around the hole
+        const warpRings = 12;
+        for (let ring = 0; ring < warpRings; ring++) {
+            const t = ring / warpRings;
+            const ringRadius = eventHorizonRadius + (warpZoneRadius - eventHorizonRadius) * t;
+            const distortStrength = (1 - t) * size * 0.15; // Stronger distortion closer to center
             
             ctx.beginPath();
-            ctx.moveTo(x - size * 0.15, y);
-            ctx.quadraticCurveTo(x - size * 0.08, y - jetLength * 0.5, x, y - jetLength);
-            ctx.quadraticCurveTo(x + size * 0.08, y - jetLength * 0.5, x + size * 0.15, y);
-            ctx.fillStyle = topJetGrad;
-            ctx.fill();
+            const segments = 60;
+            for (let s = 0; s <= segments; s++) {
+                const angle = (s / segments) * Math.PI * 2;
+                
+                // Multiple wave distortions for chaotic warping
+                const warp1 = Math.sin(angle * 3 + bh.warpPhase * 1.2) * distortStrength;
+                const warp2 = Math.sin(angle * 5 - bh.warpPhase * 0.8) * distortStrength * 0.5;
+                const warp3 = Math.sin(angle * 7 + bh.warpPhase * 2) * distortStrength * 0.3;
+                const totalWarp = warp1 + warp2 + warp3;
+                
+                const px = x + Math.cos(angle) * (ringRadius + totalWarp);
+                const py = y + Math.sin(angle) * (ringRadius + totalWarp);
+                
+                if (s === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
             
-            // Bottom jet
-            const bottomJetGrad = ctx.createLinearGradient(x, y, x, y + jetLength);
-            bottomJetGrad.addColorStop(0, 'rgba(150, 180, 255, 0.4)');
-            bottomJetGrad.addColorStop(0.3, 'rgba(120, 150, 220, 0.2)');
-            bottomJetGrad.addColorStop(1, 'transparent');
+            // Rings get dimmer and more blue-shifted further out
+            const intensity = (1 - t * 0.7) * 0.25;
+            const blueShift = t * 100;
+            ctx.strokeStyle = `rgba(${150 + blueShift * 0.5}, ${180 + blueShift * 0.3}, ${220 + blueShift * 0.35}, ${intensity})`;
+            ctx.lineWidth = 1.5 - t * 0.8;
+            ctx.stroke();
+        }
+        
+        // ========== PHOTON RING - bright edge at event horizon ==========
+        // The last light that can escape, circling the black hole
+        ctx.globalAlpha = totalFade;
+        
+        for (let pr = 0; pr < 4; pr++) {
+            const photonRadius = eventHorizonRadius * (1.02 + pr * 0.04);
+            const photonOpacity = (0.8 - pr * 0.15);
+            const distortStrength = size * 0.03 * (1 + pr * 0.5);
             
             ctx.beginPath();
-            ctx.moveTo(x - size * 0.15, y);
-            ctx.quadraticCurveTo(x - size * 0.08, y + jetLength * 0.5, x, y + jetLength);
-            ctx.quadraticCurveTo(x + size * 0.08, y + jetLength * 0.5, x + size * 0.15, y);
-            ctx.fillStyle = bottomJetGrad;
-            ctx.fill();
-
-            // ========== INFALLING MATTER STREAMS ==========
-            ctx.globalAlpha = totalFade * 0.4;
-            const streamCount = 8;
-            for (let s = 0; s < streamCount; s++) {
-                const baseAngle = (s / streamCount) * Math.PI * 2 + diskRotation;
-                const streamPhase = bh.warpPhase + s * 0.5;
+            const segments = 80;
+            for (let s = 0; s <= segments; s++) {
+                const angle = (s / segments) * Math.PI * 2;
+                const warp = Math.sin(angle * 4 + bh.warpPhase * 1.5 + pr) * distortStrength;
+                const px = x + Math.cos(angle) * (photonRadius + warp);
+                const py = y + Math.sin(angle) * (photonRadius + warp);
                 
-                // Spiral inward path
-                ctx.beginPath();
-                for (let t = 0; t <= 1; t += 0.03) {
-                    const spiralAngle = baseAngle + t * Math.PI * 1.5;
-                    const spiralRadius = diskOuterRadius * (1 + (1 - t) * 0.8);
-                    const px = x + Math.cos(spiralAngle) * spiralRadius;
-                    const py = y + Math.sin(spiralAngle) * spiralRadius * diskTilt;
-                    
-                    if (t === 0) ctx.moveTo(px, py);
-                    else ctx.lineTo(px, py);
-                }
-                
-                const streamGrad = ctx.createLinearGradient(
-                    x + Math.cos(baseAngle) * diskOuterRadius * 2,
-                    y + Math.sin(baseAngle) * diskOuterRadius * 2 * diskTilt,
-                    x, y
-                );
-                streamGrad.addColorStop(0, 'transparent');
-                streamGrad.addColorStop(0.5, 'rgba(255, 200, 150, 0.1)');
-                streamGrad.addColorStop(1, 'rgba(255, 180, 120, 0.3)');
-                
-                ctx.strokeStyle = streamGrad;
-                ctx.lineWidth = 2;
-                ctx.stroke();
+                if (s === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
             }
+            ctx.closePath();
+            
+            // Bright orange/white glow
+            ctx.shadowColor = `rgba(255, 200, 150, ${photonOpacity * 0.6})`;
+            ctx.shadowBlur = 15 - pr * 3;
+            ctx.strokeStyle = `rgba(255, ${220 - pr * 20}, ${180 - pr * 30}, ${photonOpacity})`;
+            ctx.lineWidth = 3 - pr * 0.5;
+            ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+        
+        // ========== STREAKING LIGHT being pulled in ==========
+        ctx.globalAlpha = totalFade * 0.6;
+        const streakCount = 16;
+        for (let s = 0; s < streakCount; s++) {
+            const baseAngle = (s / streakCount) * Math.PI * 2 + bh.warpPhase * 0.3;
+            const streakPhase = (bh.warpPhase * 2 + s * 0.8) % (Math.PI * 2);
+            const streakProgress = (Math.sin(streakPhase) + 1) / 2; // 0 to 1 pulsing
+            
+            // Spiral path into the hole
+            ctx.beginPath();
+            const startRadius = warpZoneRadius * (0.8 + streakProgress * 0.4);
+            const endRadius = eventHorizonRadius * 1.05;
+            
+            for (let t = 0; t <= 1; t += 0.05) {
+                const radius = startRadius - (startRadius - endRadius) * t;
+                const spiralAngle = baseAngle + t * Math.PI * 0.8;
+                const px = x + Math.cos(spiralAngle) * radius;
+                const py = y + Math.sin(spiralAngle) * radius;
+                
+                if (t === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            
+            const streakGrad = ctx.createLinearGradient(
+                x + Math.cos(baseAngle) * startRadius,
+                y + Math.sin(baseAngle) * startRadius,
+                x, y
+            );
+            streakGrad.addColorStop(0, 'rgba(200, 220, 255, 0)');
+            streakGrad.addColorStop(0.4, `rgba(220, 200, 180, ${0.15 * streakProgress})`);
+            streakGrad.addColorStop(0.8, `rgba(255, 220, 180, ${0.4 * streakProgress})`);
+            streakGrad.addColorStop(1, 'rgba(255, 200, 150, 0)');
+            
+            ctx.strokeStyle = streakGrad;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        // ========== THE VOID - absolute black hole ==========
+        // Use destination-out to literally cut a hole in the canvas
+        ctx.globalAlpha = totalFade;
+        ctx.globalCompositeOperation = 'destination-out';
+        
+        // Soft edge fade for the void
+        const voidGrad = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.7, x, y, eventHorizonRadius);
+        voidGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        voidGrad.addColorStop(0.6, 'rgba(0, 0, 0, 1)');
+        voidGrad.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
+        
+        ctx.fillStyle = voidGrad;
+        ctx.beginPath();
+        // Slightly warped edge for the event horizon
+        const voidSegments = 60;
+        for (let s = 0; s <= voidSegments; s++) {
+            const angle = (s / voidSegments) * Math.PI * 2;
+            const warp = Math.sin(angle * 6 + bh.warpPhase) * size * 0.015;
+            const px = x + Math.cos(angle) * (eventHorizonRadius + warp);
+            const py = y + Math.sin(angle) * (eventHorizonRadius + warp);
+            
+            if (s === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        
+        // Reset composite operation
+        ctx.globalCompositeOperation = 'source-over';
+        
+        // ========== INNER VOID reinforcement ==========
+        // Draw absolute black on top to ensure it's truly void
+        ctx.globalAlpha = totalFade;
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(x, y, eventHorizonRadius * 0.85, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // ========== EDGE SHIMMER ==========
+        // Faint flickering at the very edge of the event horizon
+        ctx.globalAlpha = totalFade * 0.4;
+        const shimmerCount = 20;
+        for (let i = 0; i < shimmerCount; i++) {
+            const angle = (i / shimmerCount) * Math.PI * 2;
+            const shimmerPhase = Math.sin(bh.warpPhase * 3 + i * 1.5);
+            
+            if (shimmerPhase > 0.3) {
+                const shimmerRadius = eventHorizonRadius * (0.98 + shimmerPhase * 0.05);
+                const px = x + Math.cos(angle) * shimmerRadius;
+                const py = y + Math.sin(angle) * shimmerRadius;
+                
+                ctx.fillStyle = `rgba(255, 240, 220, ${shimmerPhase * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(px, py, size * 0.02, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
 
-            ctx.restore();
+        ctx.restore();
     }
 
     // Draw space debris field
@@ -1786,21 +1885,19 @@ function initSpaceScene() {
             ctx.translate(px, py);
             ctx.rotate(piece.rotation);
             
-            // Draw irregular debris shape
+            // Draw irregular debris shape using pre-generated vertices
             const c = piece.color;
             ctx.fillStyle = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
             ctx.beginPath();
             
-            // Random polygon shape
-            const sides = 4 + Math.floor(Math.random() * 3);
-            for (let i = 0; i < sides; i++) {
-                const angle = (i / sides) * Math.PI * 2;
-                const r = pieceSize * (0.6 + Math.random() * 0.4);
-                const vx = Math.cos(angle) * r;
-                const vy = Math.sin(angle) * r * 0.7;
+            // Use pre-generated polygon shape
+            piece.vertices.forEach((v, i) => {
+                const r = pieceSize * v.radius;
+                const vx = Math.cos(v.angle) * r;
+                const vy = Math.sin(v.angle) * r * 0.7;
                 if (i === 0) ctx.moveTo(vx, vy);
                 else ctx.lineTo(vx, vy);
-            }
+            });
             ctx.closePath();
             ctx.fill();
             
@@ -1934,106 +2031,280 @@ function initSpaceScene() {
         const pulseIntensity = 0.5 + Math.sin(enc.pulsePhase) * 0.5;
         const wobbleOffset = Math.sin(enc.wobble) * size * 0.05;
         
-        // Glow aura
-        const glowGrad = ctx.createRadialGradient(0, wobbleOffset, 0, 0, wobbleOffset, size * 1.5);
-        glowGrad.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.4 * pulseIntensity})`);
-        glowGrad.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.15 * pulseIntensity})`);
-        glowGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = glowGrad;
-        ctx.beginPath();
-        ctx.arc(0, wobbleOffset, size * 1.5, 0, Math.PI * 2);
-        ctx.fill();
-        
         if (enc.shipType === 0) {
-            // Classic saucer
-            ctx.fillStyle = `rgb(60, 65, 75)`;
+            // Classic UFO saucer with 3D depth
+            
+            // Glow aura underneath
+            const glowGrad = ctx.createRadialGradient(0, wobbleOffset + size * 0.1, 0, 0, wobbleOffset + size * 0.1, size * 1.2);
+            glowGrad.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.5 * pulseIntensity})`);
+            glowGrad.addColorStop(0.4, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.2 * pulseIntensity})`);
+            glowGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = glowGrad;
+            ctx.beginPath();
+            ctx.arc(0, wobbleOffset + size * 0.1, size * 1.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Bottom hull (darker, shows depth)
+            ctx.fillStyle = `rgb(45, 50, 60)`;
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleOffset + size * 0.05, size * 0.55, size * 0.12, 0, 0, Math.PI);
+            ctx.fill();
+            
+            // Main saucer body with metallic gradient
+            const bodyGrad = ctx.createLinearGradient(0, wobbleOffset - size * 0.2, 0, wobbleOffset + size * 0.1);
+            bodyGrad.addColorStop(0, 'rgb(100, 105, 115)');
+            bodyGrad.addColorStop(0.4, 'rgb(75, 80, 90)');
+            bodyGrad.addColorStop(1, 'rgb(55, 60, 70)');
+            ctx.fillStyle = bodyGrad;
             ctx.beginPath();
             ctx.ellipse(0, wobbleOffset, size * 0.6, size * 0.15, 0, 0, Math.PI * 2);
             ctx.fill();
             
-            // Dome
-            ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.4)`;
+            // Highlight rim
+            ctx.strokeStyle = 'rgba(150, 155, 165, 0.5)';
+            ctx.lineWidth = size * 0.02;
             ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset - size * 0.08, size * 0.25, size * 0.15, 0, Math.PI, Math.PI * 2);
+            ctx.ellipse(0, wobbleOffset - size * 0.02, size * 0.58, size * 0.12, 0, Math.PI * 1.1, Math.PI * 1.9);
+            ctx.stroke();
+            
+            // Dome with glass effect
+            const domeGrad = ctx.createRadialGradient(
+                -size * 0.08, wobbleOffset - size * 0.15, 0,
+                0, wobbleOffset - size * 0.08, size * 0.25
+            );
+            domeGrad.addColorStop(0, `rgba(${gc[0] + 100}, ${gc[1] + 100}, ${gc[2] + 100}, 0.6)`);
+            domeGrad.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.35)`);
+            domeGrad.addColorStop(1, `rgba(${gc[0] * 0.5}, ${gc[1] * 0.5}, ${gc[2] * 0.5}, 0.3)`);
+            ctx.fillStyle = domeGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleOffset - size * 0.06, size * 0.22, size * 0.14, 0, Math.PI, Math.PI * 2);
             ctx.fill();
             
-            // Rim lights
-            for (let i = 0; i < 8; i++) {
-                const angle = (i / 8) * Math.PI * 2 + enc.pulsePhase * 0.5;
-                const lx = Math.cos(angle) * size * 0.55;
-                const ly = Math.sin(angle) * size * 0.12 + wobbleOffset;
-                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${pulseIntensity})`;
+            // Rim lights (pulsing)
+            for (let i = 0; i < 10; i++) {
+                const angle = (i / 10) * Math.PI * 2 + enc.pulsePhase * 0.5;
+                const lx = Math.cos(angle) * size * 0.52;
+                const ly = Math.sin(angle) * size * 0.1 + wobbleOffset;
+                const lightBrightness = (Math.sin(angle + enc.pulsePhase) * 0.5 + 0.5) * pulseIntensity;
+                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${lightBrightness})`;
                 ctx.beginPath();
-                ctx.arc(lx, ly, size * 0.03, 0, Math.PI * 2);
+                ctx.arc(lx, ly, size * 0.025, 0, Math.PI * 2);
                 ctx.fill();
             }
+            
         } else if (enc.shipType === 1) {
-            // Angular/stealth ship
-            ctx.fillStyle = `rgb(40, 45, 55)`;
+            // Space Shuttle with 3D depth
+            
+            // Engine glow (behind shuttle)
+            const engineGlow = ctx.createRadialGradient(0, wobbleOffset + size * 0.55, 0, 0, wobbleOffset + size * 0.55, size * 0.4);
+            engineGlow.addColorStop(0, `rgba(255, 200, 100, ${0.8 * pulseIntensity})`);
+            engineGlow.addColorStop(0.3, `rgba(255, 100, 50, ${0.5 * pulseIntensity})`);
+            engineGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = engineGlow;
             ctx.beginPath();
-            ctx.moveTo(0, wobbleOffset - size * 0.4);
-            ctx.lineTo(size * 0.5, wobbleOffset + size * 0.3);
-            ctx.lineTo(0, wobbleOffset + size * 0.15);
-            ctx.lineTo(-size * 0.5, wobbleOffset + size * 0.3);
+            ctx.arc(0, wobbleOffset + size * 0.55, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main fuselage (cylindrical look with gradient)
+            const fuselageGrad = ctx.createLinearGradient(-size * 0.12, 0, size * 0.12, 0);
+            fuselageGrad.addColorStop(0, 'rgb(180, 185, 190)');
+            fuselageGrad.addColorStop(0.3, 'rgb(240, 242, 245)');
+            fuselageGrad.addColorStop(0.5, 'rgb(250, 252, 255)');
+            fuselageGrad.addColorStop(0.7, 'rgb(220, 225, 230)');
+            fuselageGrad.addColorStop(1, 'rgb(160, 165, 170)');
+            
+            ctx.fillStyle = fuselageGrad;
+            ctx.beginPath();
+            ctx.moveTo(0, wobbleOffset - size * 0.5);
+            ctx.quadraticCurveTo(size * 0.12, wobbleOffset - size * 0.35, size * 0.1, wobbleOffset + size * 0.3);
+            ctx.lineTo(size * 0.1, wobbleOffset + size * 0.45);
+            ctx.lineTo(-size * 0.1, wobbleOffset + size * 0.45);
+            ctx.lineTo(-size * 0.1, wobbleOffset + size * 0.3);
+            ctx.quadraticCurveTo(-size * 0.12, wobbleOffset - size * 0.35, 0, wobbleOffset - size * 0.5);
+            ctx.fill();
+            
+            // Cockpit windows
+            ctx.fillStyle = 'rgb(20, 30, 50)';
+            ctx.beginPath();
+            ctx.ellipse(0, wobbleOffset - size * 0.35, size * 0.06, size * 0.08, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(100, 150, 200, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(-size * 0.015, wobbleOffset - size * 0.37, size * 0.025, size * 0.03, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Left wing (delta shape with 3D shading)
+            const leftWingGrad = ctx.createLinearGradient(-size * 0.5, 0, -size * 0.1, 0);
+            leftWingGrad.addColorStop(0, 'rgb(140, 145, 150)');
+            leftWingGrad.addColorStop(1, 'rgb(200, 205, 210)');
+            ctx.fillStyle = leftWingGrad;
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.1, wobbleOffset + size * 0.1);
+            ctx.lineTo(-size * 0.5, wobbleOffset + size * 0.35);
+            ctx.lineTo(-size * 0.45, wobbleOffset + size * 0.4);
+            ctx.lineTo(-size * 0.1, wobbleOffset + size * 0.35);
             ctx.closePath();
             ctx.fill();
             
-            // Engine glow
-            ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${pulseIntensity})`;
+            // Right wing
+            const rightWingGrad = ctx.createLinearGradient(size * 0.1, 0, size * 0.5, 0);
+            rightWingGrad.addColorStop(0, 'rgb(200, 205, 210)');
+            rightWingGrad.addColorStop(1, 'rgb(160, 165, 170)');
+            ctx.fillStyle = rightWingGrad;
             ctx.beginPath();
-            ctx.ellipse(0, wobbleOffset + size * 0.25, size * 0.15, size * 0.05, 0, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (enc.shipType === 2) {
-            // Organic/bio ship
-            ctx.fillStyle = `rgb(70, 60, 80)`;
-            ctx.beginPath();
-            ctx.moveTo(0, wobbleOffset - size * 0.5);
-            ctx.quadraticCurveTo(size * 0.4, wobbleOffset - size * 0.2, size * 0.3, wobbleOffset + size * 0.3);
-            ctx.quadraticCurveTo(0, wobbleOffset + size * 0.5, -size * 0.3, wobbleOffset + size * 0.3);
-            ctx.quadraticCurveTo(-size * 0.4, wobbleOffset - size * 0.2, 0, wobbleOffset - size * 0.5);
+            ctx.moveTo(size * 0.1, wobbleOffset + size * 0.1);
+            ctx.lineTo(size * 0.5, wobbleOffset + size * 0.35);
+            ctx.lineTo(size * 0.45, wobbleOffset + size * 0.4);
+            ctx.lineTo(size * 0.1, wobbleOffset + size * 0.35);
+            ctx.closePath();
             ctx.fill();
             
-            // Bioluminescent spots
-            for (let i = 0; i < 5; i++) {
-                const spotX = (Math.random() - 0.5) * size * 0.4;
-                const spotY = wobbleOffset + (Math.random() - 0.3) * size * 0.5;
-                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.3 + pulseIntensity * 0.4})`;
+            // Vertical tail
+            ctx.fillStyle = 'rgb(180, 185, 195)';
+            ctx.beginPath();
+            ctx.moveTo(0, wobbleOffset - size * 0.1);
+            ctx.lineTo(size * 0.03, wobbleOffset + size * 0.35);
+            ctx.lineTo(-size * 0.03, wobbleOffset + size * 0.35);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Engine nozzles
+            ctx.fillStyle = 'rgb(60, 65, 70)';
+            ctx.beginPath();
+            ctx.ellipse(-size * 0.04, wobbleOffset + size * 0.46, size * 0.035, size * 0.025, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(size * 0.04, wobbleOffset + size * 0.46, size * 0.035, size * 0.025, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Engine flames
+            const flameIntensity = 0.6 + pulseIntensity * 0.4;
+            ctx.fillStyle = `rgba(255, 150, 50, ${flameIntensity})`;
+            ctx.beginPath();
+            ctx.ellipse(-size * 0.04, wobbleOffset + size * 0.52, size * 0.025, size * 0.06 * pulseIntensity, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(size * 0.04, wobbleOffset + size * 0.52, size * 0.025, size * 0.06 * pulseIntensity, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+        } else if (enc.shipType === 2) {
+            // Tic-tac UFO (smooth capsule shape)
+            
+            // Subtle glow aura
+            const glowGrad = ctx.createRadialGradient(0, wobbleOffset, 0, 0, wobbleOffset, size * 1.0);
+            glowGrad.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.2 * pulseIntensity})`);
+            glowGrad.addColorStop(0.6, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.08 * pulseIntensity})`);
+            glowGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = glowGrad;
+            ctx.beginPath();
+            ctx.arc(0, wobbleOffset, size * 1.0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main body - smooth metallic capsule
+            const bodyGrad = ctx.createLinearGradient(0, wobbleOffset - size * 0.2, 0, wobbleOffset + size * 0.2);
+            bodyGrad.addColorStop(0, 'rgb(220, 225, 235)');
+            bodyGrad.addColorStop(0.3, 'rgb(250, 252, 255)');
+            bodyGrad.addColorStop(0.5, 'rgb(240, 242, 248)');
+            bodyGrad.addColorStop(0.7, 'rgb(200, 205, 215)');
+            bodyGrad.addColorStop(1, 'rgb(170, 175, 185)');
+            
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            // Capsule/pill shape
+            const capRadius = size * 0.18;
+            const bodyLength = size * 0.55;
+            ctx.moveTo(-bodyLength + capRadius, wobbleOffset - capRadius);
+            ctx.arc(-bodyLength + capRadius, wobbleOffset, capRadius, -Math.PI * 0.5, Math.PI * 0.5, true);
+            ctx.lineTo(bodyLength - capRadius, wobbleOffset + capRadius);
+            ctx.arc(bodyLength - capRadius, wobbleOffset, capRadius, Math.PI * 0.5, -Math.PI * 0.5, true);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Subtle highlight streak
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = size * 0.02;
+            ctx.beginPath();
+            ctx.moveTo(-bodyLength + capRadius * 1.5, wobbleOffset - capRadius * 0.6);
+            ctx.lineTo(bodyLength - capRadius * 1.5, wobbleOffset - capRadius * 0.6);
+            ctx.stroke();
+            
+            // Occasional pulse flash
+            if (pulseIntensity > 0.8) {
+                ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${(pulseIntensity - 0.8) * 2})`;
                 ctx.beginPath();
-                ctx.arc(spotX, spotY, size * 0.04, 0, Math.PI * 2);
+                ctx.ellipse(0, wobbleOffset, bodyLength * 0.9, capRadius * 0.8, 0, 0, Math.PI * 2);
                 ctx.fill();
             }
+            
         } else {
-            // Crystalline ship
-            ctx.fillStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.3)`;
-            ctx.strokeStyle = `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.8)`;
-            ctx.lineWidth = 2;
+            // Triangular UFO (like Phoenix lights / TR-3B style)
             
-            // Main crystal
+            // Bottom glow
+            const glowGrad = ctx.createRadialGradient(0, wobbleOffset, 0, 0, wobbleOffset, size * 0.8);
+            glowGrad.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.3 * pulseIntensity})`);
+            glowGrad.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.1 * pulseIntensity})`);
+            glowGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = glowGrad;
             ctx.beginPath();
-            ctx.moveTo(0, wobbleOffset - size * 0.5);
-            ctx.lineTo(size * 0.25, wobbleOffset);
-            ctx.lineTo(0, wobbleOffset + size * 0.4);
-            ctx.lineTo(-size * 0.25, wobbleOffset);
+            ctx.arc(0, wobbleOffset, size * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main triangular body with 3D shading
+            const bodyGrad = ctx.createLinearGradient(-size * 0.5, wobbleOffset, size * 0.5, wobbleOffset);
+            bodyGrad.addColorStop(0, 'rgb(30, 35, 45)');
+            bodyGrad.addColorStop(0.5, 'rgb(50, 55, 65)');
+            bodyGrad.addColorStop(1, 'rgb(35, 40, 50)');
+            
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            ctx.moveTo(0, wobbleOffset - size * 0.45);
+            ctx.lineTo(size * 0.5, wobbleOffset + size * 0.35);
+            ctx.lineTo(-size * 0.5, wobbleOffset + size * 0.35);
             ctx.closePath();
             ctx.fill();
+            
+            // Edge highlights (gives 3D beveled look)
+            ctx.strokeStyle = 'rgba(80, 85, 95, 0.8)';
+            ctx.lineWidth = size * 0.015;
+            ctx.beginPath();
+            ctx.moveTo(0, wobbleOffset - size * 0.45);
+            ctx.lineTo(size * 0.5, wobbleOffset + size * 0.35);
+            ctx.moveTo(0, wobbleOffset - size * 0.45);
+            ctx.lineTo(-size * 0.5, wobbleOffset + size * 0.35);
             ctx.stroke();
             
-            // Side crystals
+            // Center dome/cockpit
+            const domeGrad = ctx.createRadialGradient(0, wobbleOffset, 0, 0, wobbleOffset, size * 0.15);
+            domeGrad.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, 0.4)`);
+            domeGrad.addColorStop(1, 'rgba(40, 45, 55, 0.8)');
+            ctx.fillStyle = domeGrad;
             ctx.beginPath();
-            ctx.moveTo(size * 0.2, wobbleOffset - size * 0.1);
-            ctx.lineTo(size * 0.45, wobbleOffset + size * 0.1);
-            ctx.lineTo(size * 0.15, wobbleOffset + size * 0.2);
-            ctx.closePath();
+            ctx.arc(0, wobbleOffset, size * 0.12, 0, Math.PI * 2);
             ctx.fill();
-            ctx.stroke();
             
-            ctx.beginPath();
-            ctx.moveTo(-size * 0.2, wobbleOffset - size * 0.1);
-            ctx.lineTo(-size * 0.45, wobbleOffset + size * 0.1);
-            ctx.lineTo(-size * 0.15, wobbleOffset + size * 0.2);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
+            // Corner lights (3 bright lights at each point)
+            const corners = [
+                [0, wobbleOffset - size * 0.35],
+                [size * 0.4, wobbleOffset + size * 0.28],
+                [-size * 0.4, wobbleOffset + size * 0.28]
+            ];
+            corners.forEach((corner, i) => {
+                const lightPulse = (Math.sin(enc.pulsePhase + i * Math.PI * 0.66) * 0.5 + 0.5);
+                // Glow
+                const lightGlow = ctx.createRadialGradient(corner[0], corner[1], 0, corner[0], corner[1], size * 0.12);
+                lightGlow.addColorStop(0, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.8 * lightPulse})`);
+                lightGlow.addColorStop(0.5, `rgba(${gc[0]}, ${gc[1]}, ${gc[2]}, ${0.3 * lightPulse})`);
+                lightGlow.addColorStop(1, 'transparent');
+                ctx.fillStyle = lightGlow;
+                ctx.beginPath();
+                ctx.arc(corner[0], corner[1], size * 0.12, 0, Math.PI * 2);
+                ctx.fill();
+                // Core
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * lightPulse})`;
+                ctx.beginPath();
+                ctx.arc(corner[0], corner[1], size * 0.025, 0, Math.PI * 2);
+                ctx.fill();
+            });
         }
         
         ctx.restore();
@@ -2117,9 +2388,24 @@ function initSpaceScene() {
         spectrumHue = (spectrumHue + spectrumSpeed) % 360;
 
         drawBackground();
-        drawGasClouds();
+        
+        // Update encounter position first
+        updateEncounter();
+        const encZ = getEncounterZ();
+        
+        // Draw clouds behind the encounter (further away, higher z)
+        drawGasClouds(encZ > 0 ? encZ : 0, Infinity);
+        
         drawStars();
+        
+        // Draw the encounter
         drawEncounters();
+        
+        // Draw clouds in front of the encounter (closer, lower z)
+        if (encZ > 0) {
+            drawGasClouds(0, encZ);
+        }
+        
         drawBrightStars();
         drawComets();
 
