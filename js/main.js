@@ -1390,16 +1390,16 @@ function initSpaceScene() {
 
         if (roll < 0.20) {
             type = 'planet';           // 20%
-        } else if (roll < 0.45) {
-            type = 'prominentStar';    // 25%
+        } else if (roll < 0.40) {
+            type = 'prominentStar';    // 20%
         } else if (roll < 0.60) {
-            type = 'spaceStation';     // 15%
-        } else if (roll < 0.75) {
-            type = 'alienShip';        // 15%
-        } else if (roll < 0.90) {
+            type = 'spaceStation';     // 20%
+        } else if (roll < 0.80) {
+            type = 'alienShip';        // 20%
+        } else if (roll < 0.95) {
             type = 'nebula';           // 15%
         } else {
-            type = 'blackHole';        // 10%
+            type = 'blackHole';        // 5%
         }
 
         // Avoid same type twice in a row
