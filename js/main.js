@@ -1001,6 +1001,57 @@ function initSpaceScene() {
             warpPhase: Math.random() * Math.PI * 2,
         };
     }
+    
+    function createNebula() {
+        const spawnZ = 1100 + Math.random() * 500;
+        
+        // Spawn on left OR right side only, like planets
+        const spawnOnLeft = Math.random() > 0.5;
+        const xOffset = 150 + Math.random() * 200;
+        const x = spawnOnLeft ? -xOffset : xOffset;
+        const y = (Math.random() - 0.5) * 250;
+        
+        // Galaxy types with weighted odds
+        const roll = Math.random();
+        let nebulaType;
+        if (roll < 0.35) {
+            nebulaType = 'spiralGalaxy';      // 35%
+        } else if (roll < 0.70) {
+            nebulaType = 'ellipticalGalaxy';  // 35%
+        } else if (roll < 0.90) {
+            nebulaType = 'lenticularGalaxy';  // 20%
+        } else {
+            nebulaType = 'irregularGalaxy';   // 10%
+        }
+        
+        // Random colors for each galaxy
+        const randomColor = () => ({
+            r: 100 + Math.floor(Math.random() * 155),
+            g: 100 + Math.floor(Math.random() * 155),
+            b: 100 + Math.floor(Math.random() * 155),
+        });
+        
+        // Slight color variations - primary brighter, secondary can vary more
+        const primaryColor = randomColor();
+        const secondaryColor = randomColor();
+        
+        return {
+            type: 'nebula',
+            nebulaType: nebulaType,
+            x: x,
+            y: y,
+            z: spawnZ,
+            baseSize: 50 + Math.random() * 120,
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.003,
+            primaryColor: primaryColor,
+            secondaryColor: secondaryColor,
+            warpPhase: Math.random() * Math.PI * 2,
+            armCount: 2 + Math.floor(Math.random() * 3),
+            tilt: 0.3 + Math.random() * 0.4, // For lenticular
+        };
+    }
+    
 
     function createDebris() {
         const spawnZ = 1000 + Math.random() * 400;
@@ -1225,30 +1276,34 @@ function initSpaceScene() {
         // Weighted random selection
         const roll = Math.random();
         let type;
-        
-        if (roll < 0.38) {
-            type = 'planet';
-        } else if (roll < 0.58) {
-            type = 'prominentStar';
-        } else if (roll < 0.76) {
-            type = 'spaceStation';
-        } else if (roll < 0.95) {
-            type = 'alienShip';
+
+        if (roll < 0.20) {
+            type = 'planet';           // 20%
+        } else if (roll < 0.45) {
+            type = 'prominentStar';    // 25%
+        } else if (roll < 0.60) {
+            type = 'spaceStation';     // 15%
+        } else if (roll < 0.75) {
+            type = 'alienShip';        // 15%
+        } else if (roll < 0.90) {
+            type = 'nebula';           // 15%
         } else {
-            type = 'blackHole'; // Very rare - only 5%
+            type = 'blackHole';        // 10%
         }
-        
+
         // Avoid same type twice in a row
         if (type === lastEncounterType && Math.random() > 0.3) {
-            const types = ['planet', 'prominentStar', 'spaceStation', 'alienShip'];
+            const types = ['planet', 'prominentStar', 'spaceStation', 'alienShip', 'nebula'];
             type = types[Math.floor(Math.random() * types.length)];
         }
+        
         lastEncounterType = type;
         
         switch (type) {
             case 'planet': return createPlanet();
             case 'prominentStar': return createProminentStar();
             case 'blackHole': return createBlackHole();
+            case 'nebula': return createNebula();
             case 'spaceStation': return createSpaceStation();
             case 'alienShip': return createAlienShip();
             default: return createPlanet();
@@ -1808,8 +1863,8 @@ function initSpaceScene() {
         // This ensures we never fly "through" a planet or station
         const encType = enc.encounterType || enc.type;
         
-        // Planets and black holes need stronger center avoidance to not cover hero text
-        if (encType === 'planet' || encType === 'blackHole') {
+        // Planets, black holes, and nebulas need stronger center avoidance to not cover hero text
+        if (encType === 'planet' || encType === 'blackHole' || encType === 'nebula') {
             const minXDist = 100; // Minimum horizontal distance from center
             const proximityFactor = Math.max(0, 1 - enc.z / 800);
             
@@ -1892,6 +1947,9 @@ function initSpaceScene() {
                 break;
             case 'blackHole':
                 drawBlackHoleEncounter(enc, x, y, size, totalFade);
+                break;
+            case 'nebula':
+                drawNebulaEncounter(enc, x, y, size, totalFade);
                 break;
             case 'debris':
                 drawDebrisEncounter(enc, x, y, size, totalFade);
@@ -2515,154 +2573,113 @@ function initSpaceScene() {
     function drawBlackHoleEncounter(bh, x, y, size, totalFade) {
         ctx.save();
         
-        const eventHorizonRadius = size * 0.6;
-        const lensRadius = size * 2.2;
+        // Pulsating size variation - deep breathing effect
+        const sizePulse = 1 + Math.sin(bh.warpPhase * 0.6) * 0.3 + Math.sin(bh.warpPhase * 1.1) * 0.15 + Math.sin(bh.warpPhase * 2) * 0.08;
+        const eventHorizonRadius = size * 0.3 * sizePulse;
+        const warpRadius = size * 3 * sizePulse;
         
-        // ========== WATERY DISTORTION FIELD ==========
-        // Smooth, fluid gradient layers instead of lined rings
-        ctx.globalAlpha = totalFade;
+        // ========== SPACE WARP EFFECT ==========
+        // Subtle gradient that suggests space bending - no visible lines
         
-        // Outer ripple waves - soft, watery effect
-        const rippleCount = 5;
-        for (let r = rippleCount; r >= 0; r--) {
-            const t = r / rippleCount;
-            const rippleRadius = eventHorizonRadius * 1.3 + (lensRadius - eventHorizonRadius) * t;
-            
-            // Animated, flowing distortion
-            const flowSpeed = bh.warpPhase * 0.8;
-            const waveAmp = size * 0.08 * (1 - t * 0.5);
-            
-            // Create watery gradient for each ripple
-            const rippleGrad = ctx.createRadialGradient(
-                x + Math.sin(flowSpeed + t * 2) * waveAmp,
-                y + Math.cos(flowSpeed * 1.3 + t * 2) * waveAmp,
-                rippleRadius * 0.85,
-                x, y, rippleRadius * 1.1
-            );
-            
-            const opacity = 0.08 * (1 - t * 0.6);
-            const blueShift = (1 - t) * 30;
-            rippleGrad.addColorStop(0, 'transparent');
-            rippleGrad.addColorStop(0.3, `rgba(${80 + blueShift}, ${100 + blueShift}, ${140 + blueShift}, ${opacity})`);
-            rippleGrad.addColorStop(0.6, `rgba(${60 + blueShift}, ${80 + blueShift}, ${120 + blueShift}, ${opacity * 0.7})`);
-            rippleGrad.addColorStop(1, 'transparent');
-            
-            ctx.fillStyle = rippleGrad;
-            ctx.beginPath();
-            
-            // Organic, wobbly circle
-            const segments = 48;
-            for (let s = 0; s <= segments; s++) {
-                const angle = (s / segments) * Math.PI * 2;
-                
-                // Smooth, flowing wave distortion
-                const wave1 = Math.sin(angle * 2 + flowSpeed) * waveAmp;
-                const wave2 = Math.sin(angle * 3 - flowSpeed * 0.7) * waveAmp * 0.6;
-                const wave3 = Math.cos(angle * 1.5 + flowSpeed * 1.2) * waveAmp * 0.4;
-                const totalWave = wave1 + wave2 + wave3;
-                
-                const px = x + Math.cos(angle) * (rippleRadius + totalWave);
-                const py = y + Math.sin(angle) * (rippleRadius + totalWave);
-                
-                if (s === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
-            }
-            ctx.closePath();
-            ctx.fill();
-        }
+        // Outer warp zone - very subtle darkening of space
+        ctx.globalAlpha = totalFade * 0.3;
+        const outerWarp = ctx.createRadialGradient(x, y, eventHorizonRadius * 2, x, y, warpRadius);
+        outerWarp.addColorStop(0, 'rgba(0, 0, 20, 0.4)');
+        outerWarp.addColorStop(0.3, 'rgba(0, 0, 15, 0.2)');
+        outerWarp.addColorStop(0.6, 'rgba(0, 0, 10, 0.1)');
+        outerWarp.addColorStop(1, 'transparent');
         
-        // ========== INNER DISTORTION GLOW ==========
-        // Smooth gradient pull effect toward center
-        ctx.globalAlpha = totalFade * 0.6;
-        
-        const innerGlow = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.8, x, y, lensRadius * 0.7);
-        innerGlow.addColorStop(0, 'rgba(20, 30, 50, 0.5)');
-        innerGlow.addColorStop(0.3, 'rgba(40, 60, 100, 0.25)');
-        innerGlow.addColorStop(0.6, 'rgba(60, 80, 120, 0.1)');
-        innerGlow.addColorStop(1, 'transparent');
-        
-        ctx.fillStyle = innerGlow;
+        ctx.fillStyle = outerWarp;
         ctx.beginPath();
-        ctx.arc(x, y, lensRadius * 0.7, 0, Math.PI * 2);
+        ctx.arc(x, y, warpRadius, 0, Math.PI * 2);
         ctx.fill();
         
-        // ========== SUBTLE SWIRL EFFECT ==========
-        // Gentle curved gradients suggesting matter being pulled in
-        ctx.globalAlpha = totalFade * 0.2;
+        // ========== GRAVITATIONAL LENSING GLOW ==========
+        // Subtle light accumulation around the edge - like bent starlight
+        ctx.globalAlpha = totalFade * 0.25;
+        const lensGlow = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.9, x, y, eventHorizonRadius * 2.5);
+        lensGlow.addColorStop(0, 'transparent');
+        lensGlow.addColorStop(0.3, 'rgba(180, 200, 255, 0.15)');
+        lensGlow.addColorStop(0.5, 'rgba(200, 220, 255, 0.1)');
+        lensGlow.addColorStop(0.7, 'rgba(150, 180, 220, 0.05)');
+        lensGlow.addColorStop(1, 'transparent');
         
-        for (let swirl = 0; swirl < 3; swirl++) {
-            const swirlAngle = (swirl / 3) * Math.PI * 2 + bh.warpPhase * 0.3;
-            const swirlGrad = ctx.createRadialGradient(
-                x + Math.cos(swirlAngle) * size * 0.3,
-                y + Math.sin(swirlAngle) * size * 0.3,
-                0,
-                x + Math.cos(swirlAngle) * size * 0.3,
-                y + Math.sin(swirlAngle) * size * 0.3,
-                size * 0.8
-            );
-            swirlGrad.addColorStop(0, 'rgba(100, 130, 180, 0.3)');
-            swirlGrad.addColorStop(0.4, 'rgba(80, 110, 160, 0.15)');
-            swirlGrad.addColorStop(1, 'transparent');
-            
-            ctx.fillStyle = swirlGrad;
-            ctx.beginPath();
-            ctx.arc(x + Math.cos(swirlAngle) * size * 0.3, y + Math.sin(swirlAngle) * size * 0.3, size * 0.8, 0, Math.PI * 2);
-            ctx.fill();
-        }
+        ctx.fillStyle = lensGlow;
+        ctx.beginPath();
+        ctx.arc(x, y, eventHorizonRadius * 2.5, 0, Math.PI * 2);
+        ctx.fill();
         
-        // ========== PHOTON SPHERE - soft glow ring ==========
+        // ========== PHOTON SPHERE ==========
+        // Very subtle bright edge where light orbits - the "edge" of visible space
         ctx.globalAlpha = totalFade * 0.4;
-        const photonRadius = eventHorizonRadius * 1.2;
-        
-        const photonGrad = ctx.createRadialGradient(x, y, photonRadius * 0.9, x, y, photonRadius * 1.15);
+        const photonGrad = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.95, x, y, eventHorizonRadius * 1.25);
         photonGrad.addColorStop(0, 'transparent');
-        photonGrad.addColorStop(0.3, 'rgba(150, 180, 220, 0.2)');
-        photonGrad.addColorStop(0.5, 'rgba(180, 200, 240, 0.35)');
-        photonGrad.addColorStop(0.7, 'rgba(150, 180, 220, 0.2)');
+        photonGrad.addColorStop(0.4, 'rgba(220, 230, 255, 0.2)');
+        photonGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.35)');
+        photonGrad.addColorStop(0.75, 'rgba(220, 230, 255, 0.15)');
         photonGrad.addColorStop(1, 'transparent');
         
         ctx.fillStyle = photonGrad;
         ctx.beginPath();
-        
-        // Gently wobbling photon sphere
-        const photonSegments = 48;
-        for (let s = 0; s <= photonSegments; s++) {
-            const angle = (s / photonSegments) * Math.PI * 2;
-            const warp = Math.sin(angle * 2 + bh.warpPhase * 1.5) * size * 0.015 +
-                        Math.cos(angle * 3 - bh.warpPhase) * size * 0.01;
-            const px = x + Math.cos(angle) * (photonRadius + warp);
-            const py = y + Math.sin(angle) * (photonRadius + warp);
-            if (s === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-        }
-        ctx.closePath();
+        ctx.arc(x, y, eventHorizonRadius * 1.25, 0, Math.PI * 2);
         ctx.fill();
         
-        // ========== THE VOID - absolute black center ==========
+        // ========== ACCRETION GLOW ==========
+        // Reddish-yellow tints around the event horizon
+        ctx.globalAlpha = totalFade * 0.5;
+        
+        // Outer warm glow
+        const accretionOuter = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.9, x, y, eventHorizonRadius * 1.8);
+        accretionOuter.addColorStop(0, 'rgba(255, 180, 80, 0.4)');
+        accretionOuter.addColorStop(0.3, 'rgba(255, 120, 50, 0.25)');
+        accretionOuter.addColorStop(0.6, 'rgba(200, 80, 40, 0.1)');
+        accretionOuter.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = accretionOuter;
+        ctx.beginPath();
+        ctx.arc(x, y, eventHorizonRadius * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner hot ring - bright yellow/orange at the edge
+        ctx.globalAlpha = totalFade * 0.6;
+        const hotRing = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.85, x, y, eventHorizonRadius * 1.25);
+        hotRing.addColorStop(0, 'transparent');
+        hotRing.addColorStop(0.4, 'rgba(255, 200, 100, 0.3)');
+        hotRing.addColorStop(0.6, 'rgba(255, 150, 50, 0.5)');
+        hotRing.addColorStop(0.75, 'rgba(255, 100, 30, 0.3)');
+        hotRing.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = hotRing;
+        ctx.beginPath();
+        ctx.arc(x, y, eventHorizonRadius * 1.25, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // ========== THE VOID ==========
+        // Absolute black - like a hole in the screen with fluctuating edges
         ctx.globalAlpha = totalFade;
         ctx.globalCompositeOperation = 'destination-out';
         
-        // Smooth gradient edge
-        const voidGrad = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.4, x, y, eventHorizonRadius * 1.1);
-        voidGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
-        voidGrad.addColorStop(0.6, 'rgba(0, 0, 0, 1)');
-        voidGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.7)');
-        voidGrad.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+        // Spinning, fluctuating edge
+        const spinSpeed = bh.warpPhase * 1.5;
+        const segments = 64;
         
-        ctx.fillStyle = voidGrad;
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
         ctx.beginPath();
         
-        // Softly warped void edge
-        const voidSegments = 48;
-        for (let s = 0; s <= voidSegments; s++) {
-            const angle = (s / voidSegments) * Math.PI * 2;
-            const warp = Math.sin(angle * 2 + bh.warpPhase * 0.6) * size * 0.015 +
-                        Math.cos(angle * 3 - bh.warpPhase * 0.8) * size * 0.01;
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * Math.PI * 2 + spinSpeed;
             
-            const px = x + Math.cos(angle) * (eventHorizonRadius + warp);
-            const py = y + Math.sin(angle) * (eventHorizonRadius + warp);
+            // Multiple wave frequencies for organic fluctuation
+            const fluctuation = 
+                Math.sin(angle * 3 + spinSpeed * 2) * eventHorizonRadius * 0.08 +
+                Math.sin(angle * 5 - spinSpeed * 1.5) * eventHorizonRadius * 0.05 +
+                Math.sin(angle * 7 + spinSpeed * 3) * eventHorizonRadius * 0.03;
             
-            if (s === 0) ctx.moveTo(px, py);
+            const r = eventHorizonRadius + fluctuation;
+            const px = x + Math.cos(angle) * r;
+            const py = y + Math.sin(angle) * r;
+            
+            if (i === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
         }
         ctx.closePath();
@@ -2670,25 +2687,833 @@ function initSpaceScene() {
         
         ctx.globalCompositeOperation = 'source-over';
         
-        // Solid black core
+        // Solid black fill on top with same fluctuating shape
         ctx.globalAlpha = totalFade;
         ctx.fillStyle = '#000000';
         ctx.beginPath();
-        ctx.arc(x, y, eventHorizonRadius * 0.65, 0, Math.PI * 2);
-        ctx.fill();
         
-        // ========== ACCRETION GLOW - subtle warm edge ==========
-        ctx.globalAlpha = totalFade * 0.2;
-        const accretionGrad = ctx.createRadialGradient(x, y, eventHorizonRadius * 0.85, x, y, eventHorizonRadius * 1.4);
-        accretionGrad.addColorStop(0, 'rgba(255, 200, 150, 0.3)');
-        accretionGrad.addColorStop(0.4, 'rgba(255, 180, 130, 0.12)');
-        accretionGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = accretionGrad;
-        ctx.beginPath();
-        ctx.arc(x, y, eventHorizonRadius * 1.4, 0, Math.PI * 2);
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * Math.PI * 2 + spinSpeed;
+            
+            const fluctuation = 
+                Math.sin(angle * 3 + spinSpeed * 2) * eventHorizonRadius * 0.08 +
+                Math.sin(angle * 5 - spinSpeed * 1.5) * eventHorizonRadius * 0.05 +
+                Math.sin(angle * 7 + spinSpeed * 3) * eventHorizonRadius * 0.03;
+            
+            const r = eventHorizonRadius + fluctuation;
+            const px = x + Math.cos(angle) * r;
+            const py = y + Math.sin(angle) * r;
+            
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
         ctx.fill();
 
         ctx.restore();
+    }
+    
+    // Draw nebula or galaxy - many unique types
+    function drawNebulaEncounter(enc, x, y, size, totalFade) {
+        ctx.save();
+        
+        const pc = enc.primaryColor;
+        const sc = enc.secondaryColor;
+        const pulse = 1 + Math.sin(enc.warpPhase) * 0.05;
+        const nebulaSize = size * pulse;
+        
+        ctx.translate(x, y);
+        ctx.rotate(enc.rotation);
+        
+        switch (enc.nebulaType) {
+            case 'spiralGalaxy':
+                drawSpiralGalaxy(ctx, nebulaSize, pc, sc, enc, totalFade);
+                break;
+            case 'ellipticalGalaxy':
+                drawEllipticalGalaxy(ctx, nebulaSize, pc, sc, enc, totalFade);
+                break;
+            case 'lenticularGalaxy':
+                drawLenticularGalaxy(ctx, nebulaSize, pc, sc, enc, totalFade);
+                break;
+            case 'irregularGalaxy':
+                drawIrregularGalaxy(ctx, nebulaSize, pc, sc, enc, totalFade);
+                break;
+            default:
+                drawSpiralGalaxy(ctx, nebulaSize, pc, sc, enc, totalFade);
+        }
+        
+        ctx.restore();
+    }
+    
+    // ========== SPIRAL GALAXY (3 Random Colors: Core, Spiral, Tail) ==========
+    function drawSpiralGalaxy(ctx, size, pc, sc, enc, fade) {
+        const spinOffset = enc.warpPhase * 0.5; // Spin speed
+        const armCount = 3; // Three spiral arms
+        const corePulse = 1 + Math.sin(enc.warpPhase * 1.5) * 0.05;
+        const coreRadius = size * 0.12 * corePulse;
+        
+        // 3 distinct colors: core, spiral base, spiral tail (all independent)
+        // Generate and store all colors once so they don't change each frame
+        if (!enc.coreColor) {
+            enc.coreColor = {
+                r: 150 + Math.floor(Math.random() * 105),
+                g: 150 + Math.floor(Math.random() * 105),
+                b: 100 + Math.floor(Math.random() * 155)
+            };
+        }
+        if (!enc.spiralColor) {
+            enc.spiralColor = {
+                r: 50 + Math.floor(Math.random() * 150),
+                g: 80 + Math.floor(Math.random() * 175),
+                b: 100 + Math.floor(Math.random() * 155)
+            };
+        }
+        if (!enc.tailColor) {
+            enc.tailColor = {
+                r: 100 + Math.floor(Math.random() * 155),
+                g: 50 + Math.floor(Math.random() * 150),
+                b: 150 + Math.floor(Math.random() * 105)
+            };
+        }
+        const coreColor = enc.coreColor;
+        const spiralColor = enc.spiralColor;
+        const tailColor = enc.tailColor;
+        
+        // DRAW SPIRAL ARMS FIRST (behind core)
+        const spiralTightness = 1.0;
+        const armLength = size * 0.55;
+        
+        for (let arm = 0; arm < armCount; arm++) {
+            const armAngle = (arm / armCount) * Math.PI * 2 + spinOffset;
+            
+            ctx.lineCap = 'round';
+            
+            // Draw tapered arm using segments with decreasing width
+            const segments = 25;
+            for (let i = 0; i < segments; i++) {
+                const t1 = i / segments;
+                const t2 = (i + 1) / segments;
+                
+                const angle1 = armAngle + t1 * Math.PI * spiralTightness;
+                const angle2 = armAngle + t2 * Math.PI * spiralTightness;
+                
+                const r1 = coreRadius + t1 * armLength;
+                const r2 = coreRadius + t2 * armLength;
+                
+                const x1 = Math.cos(angle1) * r1;
+                const y1 = Math.sin(angle1) * r1 * 0.5;
+                const x2 = Math.cos(angle2) * r2;
+                const y2 = Math.sin(angle2) * r2 * 0.5;
+                
+                // Taper: thick at core, thin at end
+                const taper = 1 - t1 * 0.9;
+                const lineWidth = size * 0.12 * taper;
+                
+                // Fade out toward end
+                const alphaFade = 1 - t1 * 0.7;
+                
+                // Gradient from spiral color to tail color
+                const armColor = {
+                    r: Math.floor(spiralColor.r * (1 - t1) + tailColor.r * t1),
+                    g: Math.floor(spiralColor.g * (1 - t1) + tailColor.g * t1),
+                    b: Math.floor(spiralColor.b * (1 - t1) + tailColor.b * t1)
+                };
+                
+                ctx.globalAlpha = fade * alphaFade * 0.9;
+                ctx.strokeStyle = `rgba(${armColor.r}, ${armColor.g}, ${armColor.b}, 1)`;
+                ctx.lineWidth = lineWidth;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+        
+        // DRAW CIRCULAR CORE ON TOP
+        // Outer glow
+        ctx.globalAlpha = fade * 0.7;
+        const outerGlow = ctx.createRadialGradient(0, 0, coreRadius, 0, 0, coreRadius * 2.5);
+        outerGlow.addColorStop(0, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, 0.9)`);
+        outerGlow.addColorStop(0.5, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, 0.4)`);
+        outerGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = outerGlow;
+        ctx.beginPath();
+        ctx.arc(0, 0, coreRadius * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Solid circular core with color
+        ctx.globalAlpha = fade;
+        const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius);
+        coreGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        coreGrad.addColorStop(0.2, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, 1)`);
+        coreGrad.addColorStop(0.6, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, 1)`);
+        coreGrad.addColorStop(1, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, 0.95)`);
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Luminous white center highlight
+        ctx.globalAlpha = fade * 0.9;
+        const luminance = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius * 0.6);
+        luminance.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        luminance.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+        luminance.addColorStop(0.6, 'rgba(255, 255, 255, 0.3)');
+        luminance.addColorStop(1, 'transparent');
+        ctx.fillStyle = luminance;
+        ctx.beginPath();
+        ctx.arc(0, 0, coreRadius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Extra bright center point
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.beginPath();
+        ctx.arc(0, 0, coreRadius * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // ========== ELLIPTICAL GALAXY ==========
+    function drawEllipticalGalaxy(ctx, size, pc, sc, enc, fade) {
+        ctx.save();
+        const wobble = Math.sin(enc.warpPhase * 0.5) * 0.02;
+        ctx.scale(1 + wobble, 0.6 - wobble * 0.2);
+        
+        const breathe = 1 + Math.sin(enc.warpPhase * 0.6) * 0.05;
+        
+        // Soft outer glow - very diffuse
+        ctx.globalAlpha = fade * 0.3;
+        const outerGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.2 * breathe);
+        outerGrad.addColorStop(0, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.4)`);
+        outerGrad.addColorStop(0.4, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.2)`);
+        outerGrad.addColorStop(0.7, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.08)`);
+        outerGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = outerGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 1.2 * breathe, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Main body - smooth diffuse glow
+        ctx.globalAlpha = fade * 0.5;
+        const mainGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.8 * breathe);
+        mainGrad.addColorStop(0, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.7)`);
+        mainGrad.addColorStop(0.3, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.5)`);
+        mainGrad.addColorStop(0.6, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.25)`);
+        mainGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = mainGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.8 * breathe, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Bright core center
+        ctx.globalAlpha = fade * 0.7;
+        const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.25 * breathe);
+        coreGrad.addColorStop(0, `rgba(255, 255, 250, 0.9)`);
+        coreGrad.addColorStop(0.4, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.6)`);
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.25 * breathe, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    // ========== LENTICULAR GALAXY ==========
+    function drawLenticularGalaxy(ctx, size, pc, sc, enc, fade) {
+        const tilt = enc.tilt || 0.4;
+        const bulgePulse = 1 + Math.sin(enc.warpPhase * 1.2) * 0.05;
+        const spinOffset = enc.warpPhase * 0.15;
+        
+        // Two colors: core color (pc) and disk color (sc)
+        const coreColor = pc;
+        const diskColor = sc;
+        
+        ctx.save();
+        ctx.scale(1, tilt);
+        
+        // Outer disk
+        ctx.globalAlpha = fade * 0.5;
+        const diskGrad = ctx.createRadialGradient(0, 0, size * 0.2, 0, 0, size * 0.8);
+        diskGrad.addColorStop(0, `rgba(${diskColor.r}, ${diskColor.g}, ${diskColor.b}, 0.7)`);
+        diskGrad.addColorStop(0.4, `rgba(${diskColor.r}, ${diskColor.g}, ${diskColor.b}, 0.5)`);
+        diskGrad.addColorStop(0.7, `rgba(${diskColor.r}, ${diskColor.g}, ${diskColor.b}, 0.25)`);
+        diskGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = diskGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Subtle fragmented spiral hints - just 2 short arms
+        ctx.save();
+        ctx.rotate(spinOffset);
+        
+        // Use seeded random for consistent but irregular spacing
+        const spiralSeed = Math.floor(enc.x * 500 + enc.y * 333);
+        const sRand = (i) => {
+            const x = Math.sin(spiralSeed + i * 127.1) * 43758.5453;
+            return x - Math.floor(x);
+        };
+        
+        for (let s = 0; s < 3; s++) {
+            const baseAngle = (s / 3) * Math.PI * 2; // Evenly spaced
+            
+            // Draw irregular fragmented spots
+            let spotIndex = 0;
+            for (let t = 0.15; t <= 0.75; t += 0.06 + sRand(s * 100 + spotIndex) * 0.12) {
+                spotIndex++;
+                
+                // Skip some spots randomly for fragmentation
+                if (sRand(s * 200 + spotIndex) < 0.3) continue;
+                
+                const angle = baseAngle + t * Math.PI * 0.8;
+                const r = size * 0.18 + t * size * 0.45;
+                
+                // Add random offset to position
+                const offsetR = (sRand(s * 300 + spotIndex) - 0.5) * size * 0.04;
+                const offsetA = (sRand(s * 400 + spotIndex) - 0.5) * 0.15;
+                
+                const x = Math.cos(angle + offsetA) * (r + offsetR);
+                const y = Math.sin(angle + offsetA) * (r + offsetR);
+                
+                // Varied spot size
+                const spotSize = size * (0.015 + sRand(s * 500 + spotIndex) * 0.02);
+                
+                ctx.globalAlpha = fade * (0.25 + sRand(s * 600 + spotIndex) * 0.2) * (1 - t * 0.4);
+                ctx.fillStyle = `rgba(${diskColor.r}, ${diskColor.g}, ${diskColor.b}, 0.7)`;
+                ctx.beginPath();
+                ctx.arc(x, y, spotSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        ctx.restore();
+        
+        // Prominent central bulge with core color
+        ctx.globalAlpha = fade * 0.95;
+        const bulgeGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.3 * bulgePulse);
+        bulgeGrad.addColorStop(0, 'rgba(255, 255, 250, 1)');
+        bulgeGrad.addColorStop(0.2, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, 1)`);
+        bulgeGrad.addColorStop(0.6, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, 0.85)`);
+        bulgeGrad.addColorStop(1, `rgba(${coreColor.r}, ${coreColor.g}, ${coreColor.b}, 0.2)`);
+        ctx.fillStyle = bulgeGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.3 * bulgePulse, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Luminous white core center
+        ctx.globalAlpha = fade * 0.9;
+        const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.1);
+        coreGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        coreGrad.addColorStop(0.4, 'rgba(255, 255, 255, 0.6)');
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    // ========== IRREGULAR GALAXY (Star Cluster) ==========
+    function drawIrregularGalaxy(ctx, size, pc, sc, enc, fade) {
+        // Dense cluster of many colorful stars
+        const starCount = 100;
+
+        // Use a FIXED seed based on galaxy position (not warpPhase) so stars don't jump
+        const seed = Math.floor(enc.x * 1000 + enc.y * 777);
+        const seededRandom = (i) => {
+            const x = Math.sin(seed + i * 127.1) * 43758.5453;
+            return x - Math.floor(x);
+        };
+
+        // Star colors - assigned once per star based on seed
+        const starColors = [
+            { r: 255, g: 255, b: 255 },   // White
+            { r: 255, g: 200, b: 150 },   // Warm yellow
+            { r: 150, g: 180, b: 255 },   // Blue
+            { r: 255, g: 180, b: 180 },   // Red
+            { r: 255, g: 255, b: 200 },   // Yellow
+            { r: 200, g: 150, b: 255 },   // Purple
+            { r: 150, g: 255, b: 200 },   // Cyan
+            { r: 255, g: 200, b: 100 },   // Orange
+        ];
+
+        // Random shape offset for this galaxy
+        const shapeOffsetX = (seededRandom(500) - 0.5) * size * 0.3;
+        const shapeOffsetY = (seededRandom(501) - 0.5) * size * 0.3;
+        const stretchX = 0.6 + seededRandom(502) * 0.8;
+        const stretchY = 0.6 + seededRandom(503) * 0.8;
+
+        for (let i = 0; i < starCount; i++) {
+            // More chaotic, irregular distribution
+            const clumpId = Math.floor(seededRandom(i + 600) * 4); // 4 random clumps
+            const clumpX = (seededRandom(clumpId * 100) - 0.5) * size * 0.5;
+            const clumpY = (seededRandom(clumpId * 100 + 1) - 0.5) * size * 0.4;
+            
+            // Random offset from clump center
+            const offsetX = (seededRandom(i) - 0.5) * size * 0.5 * stretchX;
+            const offsetY = (seededRandom(i + 50) - 0.5) * size * 0.4 * stretchY;
+            
+            const sx = clumpX + offsetX + shapeOffsetX;
+            const sy = clumpY + offsetY + shapeOffsetY;
+
+            // Varied star size
+            const starSize = size * (0.012 + seededRandom(i + 200) * seededRandom(i + 250) * 0.045);
+
+            // Fixed color for each star
+            const starColor = starColors[Math.floor(seededRandom(i + 300) * starColors.length)];
+
+            // Very strong sparkling effect
+            const twinklePhase = seededRandom(i + 400) * Math.PI * 2;
+            const twinkle = 0.15 + Math.sin(enc.warpPhase * 1.2 + twinklePhase) * 0.85;
+
+            ctx.globalAlpha = fade * twinkle;
+            const starGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, starSize);
+            starGrad.addColorStop(0, `rgba(255, 255, 255, 1)`);
+            starGrad.addColorStop(0.3, `rgba(${starColor.r}, ${starColor.g}, ${starColor.b}, 0.9)`);
+            starGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = starGrad;
+            ctx.beginPath();
+            ctx.arc(sx, sy, starSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Subtle background glow - offset to match shape
+        ctx.globalAlpha = fade * 0.15;
+        const glowGrad = ctx.createRadialGradient(shapeOffsetX, shapeOffsetY, 0, shapeOffsetX, shapeOffsetY, size * 0.5);
+        glowGrad.addColorStop(0, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.3)`);
+        glowGrad.addColorStop(0.5, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.15)`);
+        glowGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(shapeOffsetX, shapeOffsetY, size * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // ========== RING GALAXY ==========
+    function drawRingGalaxy(ctx, size, pc, sc, enc, fade) {
+        const ringPulse = 1 + Math.sin(enc.warpPhase) * 0.03;
+        const ringRadius = size * 0.6 * ringPulse;
+        const thickness = size * enc.ringThickness * 0.8;
+        
+        // Ring glow - crisp
+        ctx.globalAlpha = fade * 0.6;
+        const ringGrad = ctx.createRadialGradient(0, 0, ringRadius - thickness, 0, 0, ringRadius + thickness);
+        ringGrad.addColorStop(0, 'transparent');
+        ringGrad.addColorStop(0.25, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.6)`);
+        ringGrad.addColorStop(0.5, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.95)`);
+        ringGrad.addColorStop(0.75, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.6)`);
+        ringGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = ringGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, ringRadius + thickness, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Star clusters in ring - bright
+        for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2 + enc.warpPhase * 0.4;
+            const px = Math.cos(angle) * ringRadius;
+            const py = Math.sin(angle) * ringRadius * 0.5;
+            const twinkle = 0.6 + Math.sin(enc.warpPhase * 3 + i * 2) * 0.4;
+            const clusterSize = thickness * 0.35 * (0.8 + twinkle * 0.3);
+            
+            ctx.globalAlpha = fade * 0.8 * twinkle;
+            const clusterGrad = ctx.createRadialGradient(px, py, 0, px, py, clusterSize);
+            clusterGrad.addColorStop(0, `rgba(255, 255, 255, 1)`);
+            clusterGrad.addColorStop(0.4, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.6)`);
+            clusterGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = clusterGrad;
+            ctx.beginPath();
+            ctx.arc(px, py, clusterSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Central core - bright
+        const corePulse = 1 + Math.sin(enc.warpPhase * 2) * 0.1;
+        ctx.globalAlpha = fade * 0.8;
+        const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.12 * corePulse);
+        coreGrad.addColorStop(0, 'rgba(255, 250, 230, 1)');
+        coreGrad.addColorStop(0.5, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.6)`);
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.12 * corePulse, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // ========== BARRED SPIRAL GALAXY ==========
+    function drawBarredGalaxy(ctx, size, pc, sc, enc, fade) {
+        const spinOffset = enc.warpPhase * 0.2;
+        
+        // Central bar - bright
+        const barPulse = 1 + Math.sin(enc.warpPhase * 1.2) * 0.05;
+        ctx.globalAlpha = fade * 0.7;
+        const barGrad = ctx.createLinearGradient(-size * 0.35 * barPulse, 0, size * 0.35 * barPulse, 0);
+        barGrad.addColorStop(0, 'transparent');
+        barGrad.addColorStop(0.15, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.7)`);
+        barGrad.addColorStop(0.5, `rgba(255, 250, 235, 1)`);
+        barGrad.addColorStop(0.85, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.7)`);
+        barGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = barGrad;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, size * 0.38 * barPulse, size * 0.1 * barPulse, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Spiral arms - sharper
+        for (let arm = 0; arm < 2; arm++) {
+            const startX = arm === 0 ? -size * 0.3 : size * 0.3;
+            const direction = arm === 0 ? -1 : 1;
+            
+            for (let t = 0; t < 1; t += 0.03) {
+                const angle = direction * t * Math.PI * 1.5 + spinOffset * direction;
+                const radius = size * 0.3 + t * size * 0.55;
+                const px = startX + Math.cos(angle) * radius * direction;
+                const py = Math.sin(angle) * radius * 0.5;
+                const armPulse = 1 + Math.sin(enc.warpPhase * 2 + t * 4) * 0.1;
+                const thickness = size * 0.07 * (1 - t * 0.4) * armPulse;
+                
+                ctx.globalAlpha = fade * 0.6 * (1 - t * 0.5);
+                const armGrad = ctx.createRadialGradient(px, py, 0, px, py, thickness);
+                armGrad.addColorStop(0, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.9)`);
+                armGrad.addColorStop(0.6, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.4)`);
+                armGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = armGrad;
+                ctx.beginPath();
+                ctx.arc(px, py, thickness, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+    
+    // ========== EMISSION NEBULA (like Orion) ==========
+    function drawEmissionNebula(ctx, size, pc, sc, enc, fade) {
+        // Billowing clouds of ionized gas - swirling motion
+        const cloudCount = 7;
+        for (let c = 0; c < cloudCount; c++) {
+            // Swirling cloud motion
+            const swirl = enc.warpPhase * 0.2 + Math.sin(enc.warpPhase * 0.5 + c) * 0.3;
+            const cloudAngle = (c / cloudCount) * Math.PI * 2 + swirl;
+            const breathe = 1 + Math.sin(enc.warpPhase * 1.2 + c * 0.8) * 0.2;
+            const cloudDist = size * 0.25 * (0.3 + Math.sin(c * 2.1 + enc.warpPhase * 0.3) * 0.7);
+            const cloudSize = size * (0.4 + (c % 3) * 0.15) * breathe;
+            const cx = Math.cos(cloudAngle) * cloudDist;
+            const cy = Math.sin(cloudAngle) * cloudDist;
+            
+            const mixFactor = (c / cloudCount + Math.sin(enc.warpPhase) * 0.1) % 1;
+            const cloudR = Math.round(pc.r * (1 - mixFactor) + sc.r * mixFactor);
+            const cloudG = Math.round(pc.g * (1 - mixFactor) + sc.g * mixFactor);
+            const cloudB = Math.round(pc.b * (1 - mixFactor) + sc.b * mixFactor);
+            
+            ctx.globalAlpha = fade * (0.2 + Math.sin(enc.warpPhase + c) * 0.1 + c * 0.03);
+            const cloudGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cloudSize);
+            cloudGrad.addColorStop(0, `rgba(${cloudR}, ${cloudG}, ${cloudB}, 0.5)`);
+            cloudGrad.addColorStop(0.4, `rgba(${cloudR}, ${cloudG}, ${cloudB}, 0.25)`);
+            cloudGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = cloudGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, cloudSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Bright central star region - twinkling
+        const twinkle = 0.5 + Math.sin(enc.warpPhase * 4) * 0.2;
+        ctx.globalAlpha = fade * (0.5 + twinkle * 0.3);
+        const starSize = size * 0.2 * (0.9 + twinkle * 0.2);
+        const starGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, starSize);
+        starGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        starGrad.addColorStop(0.3, `rgba(255, 250, 240, 0.5)`);
+        starGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = starGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, starSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Flowing dark dust lanes
+        ctx.globalAlpha = fade * 0.2;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        for (let d = 0; d < 3; d++) {
+            const dAngle = d * 0.8 + enc.rotation + enc.warpPhase * 0.1;
+            const dDist = size * 0.2 + Math.sin(enc.warpPhase + d) * size * 0.05;
+            ctx.save();
+            ctx.rotate(dAngle);
+            ctx.beginPath();
+            ctx.ellipse(dDist, 0, size * 0.4, size * 0.05, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+    
+    // ========== PLANETARY NEBULA (dying star shell) ==========
+    function drawPlanetaryNebula(ctx, size, pc, sc, enc, fade) {
+        // Outer shell ring - sharper
+        const expand = 1 + Math.sin(enc.warpPhase * 0.5) * 0.05;
+        ctx.globalAlpha = fade * 0.6;
+        const shellGrad = ctx.createRadialGradient(0, 0, size * 0.55 * expand, 0, 0, size * 0.85 * expand);
+        shellGrad.addColorStop(0, 'transparent');
+        shellGrad.addColorStop(0.2, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.6)`);
+        shellGrad.addColorStop(0.5, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.9)`);
+        shellGrad.addColorStop(0.8, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.5)`);
+        shellGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = shellGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.85 * expand, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner ring - crisp
+        const innerPulse = 1 + Math.sin(enc.warpPhase * 1.5) * 0.08;
+        ctx.globalAlpha = fade * 0.7;
+        const innerGrad = ctx.createRadialGradient(0, 0, size * 0.2 * innerPulse, 0, 0, size * 0.45 * innerPulse);
+        innerGrad.addColorStop(0, 'transparent');
+        innerGrad.addColorStop(0.3, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.7)`);
+        innerGrad.addColorStop(0.5, `rgba(255, 255, 255, 0.8)`);
+        innerGrad.addColorStop(0.7, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.5)`);
+        innerGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = innerGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.45 * innerPulse, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Central white dwarf - bright
+        const corePulse = 0.8 + Math.sin(enc.warpPhase * 3) * 0.2;
+        ctx.globalAlpha = fade * 0.95;
+        const coreSize = size * 0.06 * (0.9 + corePulse * 0.2);
+        const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, coreSize);
+        coreGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        coreGrad.addColorStop(0.4, 'rgba(200, 230, 255, 0.9)');
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, coreSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // ========== SUPERNOVA REMNANT ==========
+    function drawSupernovaRemnant(ctx, size, pc, sc, enc, fade) {
+        // Chaotic expanding shell
+        const filaments = enc.filamentCount || 10;
+        const expand = 1 + enc.warpPhase * 0.01; // Slowly expanding over time
+        
+        // Outer shock wave - rippling and expanding
+        const shockPulse = 1 + Math.sin(enc.warpPhase * 2) * 0.05;
+        ctx.globalAlpha = fade * (0.25 + Math.sin(enc.warpPhase) * 0.1);
+        ctx.strokeStyle = `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.5)`;
+        ctx.lineWidth = size * 0.03;
+        ctx.beginPath();
+        for (let i = 0; i <= 32; i++) {
+            const angle = (i / 32) * Math.PI * 2;
+            const wobble = Math.sin(angle * 5 + enc.warpPhase * 2) * size * 0.12;
+            const r = size * 0.9 * shockPulse + wobble;
+            const px = Math.cos(angle) * r;
+            const py = Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Filamentary structure - writhing and glowing
+        for (let f = 0; f < filaments; f++) {
+            const fWave = Math.sin(enc.warpPhase * 1.5 + f * 0.7) * 0.2;
+            const fAngle = (f / filaments) * Math.PI * 2 + enc.rotation * 0.5 + fWave;
+            const fLength = size * (0.5 + Math.sin(f * 1.7 + enc.warpPhase * 0.5) * 0.35);
+            const fBright = 0.3 + Math.sin(enc.warpPhase * 2 + f) * 0.15;
+            
+            ctx.globalAlpha = fade * fBright;
+            const filGrad = ctx.createLinearGradient(0, 0, Math.cos(fAngle) * fLength, Math.sin(fAngle) * fLength);
+            filGrad.addColorStop(0, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.7)`);
+            filGrad.addColorStop(0.5, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.4)`);
+            filGrad.addColorStop(1, 'transparent');
+            
+            ctx.strokeStyle = filGrad;
+            ctx.lineWidth = size * (0.03 + Math.sin(enc.warpPhase + f) * 0.015);
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            const ctrlWobble = Math.sin(enc.warpPhase * 2 + f * 2) * 0.3;
+            const ctrl1x = Math.cos(fAngle + 0.2 + ctrlWobble) * fLength * 0.4;
+            const ctrl1y = Math.sin(fAngle + 0.2 + ctrlWobble) * fLength * 0.4;
+            ctx.quadraticCurveTo(ctrl1x, ctrl1y, Math.cos(fAngle) * fLength, Math.sin(fAngle) * fLength);
+            ctx.stroke();
+        }
+        
+        // Hot central region (neutron star or pulsar) - pulsing rapidly
+        const pulsarFlash = 0.4 + Math.abs(Math.sin(enc.warpPhase * 6)) * 0.6;
+        ctx.globalAlpha = fade * pulsarFlash;
+        const hotSize = size * 0.15 * (0.8 + pulsarFlash * 0.3);
+        const hotGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, hotSize);
+        hotGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        hotGrad.addColorStop(0.4, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.6)`);
+        hotGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = hotGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, hotSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // ========== REFLECTION NEBULA (blue scattered light) ==========
+    function drawReflectionNebula(ctx, size, pc, sc, enc, fade) {
+        // Scattered starlight glow - sharper
+        const shimmer = 1 + Math.sin(enc.warpPhase * 0.8) * 0.05;
+        ctx.globalAlpha = fade * 0.5;
+        const mainGrad = ctx.createRadialGradient(size * 0.1, -size * 0.1, 0, 0, 0, size * 0.8 * shimmer);
+        mainGrad.addColorStop(0, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.9)`);
+        mainGrad.addColorStop(0.3, `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.6)`);
+        mainGrad.addColorStop(0.6, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.3)`);
+        mainGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = mainGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.8 * shimmer, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Illuminating star - bright
+        const twinkle = 0.7 + Math.sin(enc.warpPhase * 5) * 0.3;
+        ctx.globalAlpha = fade * 0.95;
+        const starSize = size * 0.1 * (0.9 + twinkle * 0.15);
+        const starGrad = ctx.createRadialGradient(size * 0.15, -size * 0.15, 0, size * 0.15, -size * 0.15, starSize);
+        starGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        starGrad.addColorStop(0.3, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.8)`);
+        starGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = starGrad;
+        ctx.beginPath();
+        ctx.arc(size * 0.15, -size * 0.15, starSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // ========== DARK NEBULA (silhouette) ==========
+    function drawDarkNebula(ctx, size, pc, sc, enc, fade) {
+        // Background glow (distant stars being blocked) - subtle pulsing
+        const bgPulse = 1 + Math.sin(enc.warpPhase * 0.5) * 0.1;
+        ctx.globalAlpha = fade * (0.15 + Math.sin(enc.warpPhase * 0.8) * 0.05);
+        const bgGrad = ctx.createRadialGradient(0, 0, size * 0.5, 0, 0, size * 1.3 * bgPulse);
+        bgGrad.addColorStop(0, 'transparent');
+        bgGrad.addColorStop(0.5, 'rgba(100, 80, 120, 0.25)');
+        bgGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = bgGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 1.3 * bgPulse, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Dark absorbing cloud - blocks light, slowly morphing
+        ctx.globalAlpha = fade * 0.6;
+        ctx.globalCompositeOperation = 'destination-out';
+        
+        const darkGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.8);
+        darkGrad.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
+        darkGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.6)');
+        darkGrad.addColorStop(0.8, 'rgba(0, 0, 0, 0.3)');
+        darkGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = darkGrad;
+        
+        // Draw blobby shape - slowly morphing
+        ctx.beginPath();
+        for (let i = 0; i <= 24; i++) {
+            const angle = (i / 24) * Math.PI * 2;
+            const wobble = Math.sin(angle * 3 + enc.warpPhase * 0.8) * size * 0.15 +
+                          Math.sin(angle * 5 + enc.warpPhase * 0.4) * size * 0.1 +
+                          Math.sin(angle * 7 - enc.warpPhase * 0.6) * size * 0.05;
+            const r = size * 0.6 + wobble;
+            const px = Math.cos(angle) * r;
+            const py = Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.globalCompositeOperation = 'source-over';
+        
+        // Faint reddish edge glow (infrared emission) - flickering
+        const edgeGlow = 0.1 + Math.sin(enc.warpPhase * 1.5) * 0.08;
+        ctx.globalAlpha = fade * edgeGlow;
+        ctx.strokeStyle = `rgba(${sc.r + 50}, ${sc.g}, ${sc.b}, 0.5)`;
+        ctx.lineWidth = size * (0.06 + Math.sin(enc.warpPhase) * 0.02);
+        ctx.beginPath();
+        for (let i = 0; i <= 24; i++) {
+            const angle = (i / 24) * Math.PI * 2;
+            const wobble = Math.sin(angle * 3 + enc.warpPhase * 0.8) * size * 0.15 +
+                          Math.sin(angle * 5 + enc.warpPhase * 0.4) * size * 0.1 +
+                          Math.sin(angle * 7 - enc.warpPhase * 0.6) * size * 0.05;
+            const r = size * 0.6 + wobble;
+            const px = Math.cos(angle) * r;
+            const py = Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    }
+    
+    // ========== CRAB NEBULA (pulsar wind nebula) ==========
+    function drawCrabNebula(ctx, size, pc, sc, enc, fade) {
+        // Synchrotron radiation (blue glow) - pulsing with pulsar
+        const syncPulse = 1 + Math.sin(enc.warpPhase * 4) * 0.1;
+        ctx.globalAlpha = fade * (0.25 + Math.sin(enc.warpPhase * 3) * 0.1);
+        const syncGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.8 * syncPulse);
+        syncGrad.addColorStop(0, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.7)`);
+        syncGrad.addColorStop(0.4, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.3)`);
+        syncGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = syncGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.8 * syncPulse, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Filamentary outer shell (orange/red) - writhing
+        const filaments = enc.filamentCount || 12;
+        for (let f = 0; f < filaments; f++) {
+            const fWave = Math.sin(enc.warpPhase * 1.5 + f * 0.8) * 0.15;
+            const fAngle = (f / filaments) * Math.PI * 2 + fWave;
+            const fLength = size * (0.7 + Math.sin(f * 2.3 + enc.warpPhase * 0.8) * 0.25);
+            const fWidth = size * (0.05 + Math.sin(enc.warpPhase * 2 + f) * 0.02);
+            const fBright = 0.3 + Math.sin(enc.warpPhase * 2.5 + f * 1.5) * 0.15;
+            
+            ctx.globalAlpha = fade * fBright;
+            
+            // Curved filament - waving
+            ctx.strokeStyle = `rgba(${pc.r}, ${pc.g}, ${pc.b}, 0.65)`;
+            ctx.lineWidth = fWidth;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            
+            const startR = size * 0.3;
+            const startX = Math.cos(fAngle) * startR;
+            const startY = Math.sin(fAngle) * startR;
+            const endX = Math.cos(fAngle + 0.1 + fWave * 0.5) * fLength;
+            const endY = Math.sin(fAngle + 0.1 + fWave * 0.5) * fLength;
+            const ctrlWave = Math.sin(enc.warpPhase * 1.8 + f * 2) * 0.2;
+            const ctrlX = Math.cos(fAngle - 0.15 + ctrlWave) * fLength * 0.6;
+            const ctrlY = Math.sin(fAngle - 0.15 + ctrlWave) * fLength * 0.6;
+            
+            ctx.moveTo(startX, startY);
+            ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+            ctx.stroke();
+        }
+        
+        // Central pulsar (rapidly pulsing)
+        const pulsarBrightness = 0.5 + Math.abs(Math.sin(enc.warpPhase * 8)) * 0.5;
+        ctx.globalAlpha = fade * pulsarBrightness;
+        const pulsarSize = size * 0.1 * (0.7 + pulsarBrightness * 0.5);
+        const pulsarGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, pulsarSize);
+        pulsarGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        pulsarGrad.addColorStop(0.3, `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.9)`);
+        pulsarGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = pulsarGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, pulsarSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Pulsar beam (rapidly rotating)
+        const beamAngle = enc.warpPhase * 4; // Fast rotation
+        const beamBright = 0.15 + pulsarBrightness * 0.2;
+        ctx.globalAlpha = fade * beamBright;
+        ctx.strokeStyle = `rgba(${sc.r}, ${sc.g}, ${sc.b}, 0.6)`;
+        ctx.lineWidth = size * 0.04;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(beamAngle) * size * 0.05, Math.sin(beamAngle) * size * 0.05);
+        ctx.lineTo(Math.cos(beamAngle) * size * 0.6, Math.sin(beamAngle) * size * 0.6);
+        ctx.moveTo(Math.cos(beamAngle + Math.PI) * size * 0.05, Math.sin(beamAngle + Math.PI) * size * 0.05);
+        ctx.lineTo(Math.cos(beamAngle + Math.PI) * size * 0.6, Math.sin(beamAngle + Math.PI) * size * 0.6);
+        ctx.stroke();
     }
 
     // Draw space debris field
