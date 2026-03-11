@@ -27,6 +27,12 @@ function initNavigation() {
         });
     });
 
+    // Logo click deselects all nav links
+    const navLogo = document.querySelector('.nav__logo');
+    navLogo?.addEventListener('click', () => {
+        navLinks.forEach(link => link.classList.remove('active'));
+    });
+
     window.addEventListener('scroll', () => {
         if (window.scrollY > 50) {
             nav.classList.add('nav--scrolled');
@@ -39,21 +45,27 @@ function initNavigation() {
 function initScrollEffects() {
     const sections = document.querySelectorAll('.section');
     const navLinks = document.querySelectorAll('.nav__link');
+    const hero = document.getElementById('hero');
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const id = entry.target.getAttribute('id');
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === `#${id}`) {
-                        link.classList.add('active');
-                    }
-                });
+                if (id === 'hero') {
+                    navLinks.forEach(link => link.classList.remove('active'));
+                } else {
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
             }
         });
     }, { rootMargin: '-20% 0px -80% 0px' });
 
+    if (hero) observer.observe(hero);
     sections.forEach(section => observer.observe(section));
 }
 
@@ -310,13 +322,17 @@ function initSpaceScene() {
     const flightSpeed = 0.8;
 
     // 3D Stars flying past
+    // Mobile detection for performance optimization
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+        || window.innerWidth < 768;
+
     const stars = [];
-    const starCount = 400;
+    const starCount = isMobile ? 200 : 400;
     const starDepth = 1500;
 
     // Gas clouds with depth - colorful clouds to fly through
     const gasClouds = [];
-    const maxGasClouds = 20;
+    const maxGasClouds = isMobile ? 8 : 20;
 
     // Space encounters - only one major object visible at a time
     // Types: planet, blackHole, debris, spaceStation, alienShip
@@ -1603,10 +1619,10 @@ function initSpaceScene() {
 
             if (baseOpacity < 0.01) continue;
             
-            // Generate puffs if needed
+            // Generate puffs if needed (reduced on mobile for performance)
             if (!cloud.puffs) {
                 cloud.puffs = [];
-                const clusterCount = 5 + Math.floor(Math.random() * 4);
+                const clusterCount = isMobile ? (3 + Math.floor(Math.random() * 2)) : (5 + Math.floor(Math.random() * 4));
                 
                 for (let c = 0; c < clusterCount; c++) {
                     const clusterAngle = (c / clusterCount) * Math.PI * 2 + Math.random() * 0.5;
@@ -1627,7 +1643,8 @@ function initSpaceScene() {
                         pulseAmount: 0.1 + Math.random() * 0.15,
                     });
                     
-                    const subPuffs = 3 + Math.floor(Math.random() * 3);
+                    // Fewer sub-puffs on mobile
+                    const subPuffs = isMobile ? (1 + Math.floor(Math.random() * 2)) : (3 + Math.floor(Math.random() * 3));
                     for (let s = 0; s < subPuffs; s++) {
                         const subAngle = Math.random() * Math.PI * 2;
                         const subDist = clusterSize * (0.3 + Math.random() * 0.4);
@@ -1691,8 +1708,8 @@ function initSpaceScene() {
                 const pulse = 1 + Math.sin(puff.pulsePhase) * pulseAmount;
                 const puffRadius = radius * puff.size * pulse;
                 
-                // Skip if too small
-                if (puffRadius < 4) continue;
+                // Skip if too small (higher threshold on mobile)
+                if (puffRadius < (isMobile ? 8 : 4)) continue;
                 
                 // Color blending
                 const blendFactor = (animatedX + animatedY + 1) * 0.5;
@@ -1732,29 +1749,29 @@ function initSpaceScene() {
                 ctx.fill();
             }
             
-            // Smooth highlight/glow intensity based on LOD (no hard cutoff)
-            const effectIntensity = Math.max(0, (lodFactor - 0.3) / 0.7); // Fades in from 0.3-1.0
-            
-            if (effectIntensity > 0.01) {
-                // Subtle highlight - intensity scales smoothly
-                const highlightGrad = ctx.createRadialGradient(-radius * 0.2, -radius * 0.25, 0, 0, 0, radius * 0.5);
-                highlightGrad.addColorStop(0, `rgba(255,255,255,${baseOpacity * 0.12 * effectIntensity})`);
-                highlightGrad.addColorStop(1, 'transparent');
-                ctx.fillStyle = highlightGrad;
-                ctx.beginPath();
-                ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
-                ctx.fill();
+            // Smooth highlight/glow intensity based on LOD (skip on mobile for performance)
+            if (!isMobile) {
+                const effectIntensity = Math.max(0, (lodFactor - 0.3) / 0.7);
                 
-                // Outer glow - intensity scales smoothly
-                const glowRadius = radius * (1.1 + effectIntensity * 0.15);
-                const glowGrad = ctx.createRadialGradient(0, 0, radius * 0.5, 0, 0, glowRadius);
-                glowGrad.addColorStop(0, 'transparent');
-                glowGrad.addColorStop(0.5, `rgba(${primaryColor[0]},${primaryColor[1]},${primaryColor[2]},${baseOpacity * 0.1 * effectIntensity})`);
-                glowGrad.addColorStop(1, 'transparent');
-                ctx.fillStyle = glowGrad;
-                ctx.beginPath();
-                ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
-                ctx.fill();
+                if (effectIntensity > 0.01) {
+                    const highlightGrad = ctx.createRadialGradient(-radius * 0.2, -radius * 0.25, 0, 0, 0, radius * 0.5);
+                    highlightGrad.addColorStop(0, `rgba(255,255,255,${baseOpacity * 0.12 * effectIntensity})`);
+                    highlightGrad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = highlightGrad;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, radius * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    const glowRadius = radius * (1.1 + effectIntensity * 0.15);
+                    const glowGrad = ctx.createRadialGradient(0, 0, radius * 0.5, 0, 0, glowRadius);
+                    glowGrad.addColorStop(0, 'transparent');
+                    glowGrad.addColorStop(0.5, `rgba(${primaryColor[0]},${primaryColor[1]},${primaryColor[2]},${baseOpacity * 0.1 * effectIntensity})`);
+                    glowGrad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = glowGrad;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
 
             ctx.restore();
