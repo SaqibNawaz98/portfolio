@@ -1550,15 +1550,19 @@ function initSpaceScene() {
             const cloud = gasClouds[i];
             
             cloud.z -= flightSpeed * 3;
-            cloud.wobble += cloud.wobbleSpeed;
-            cloud.rotation += cloud.rotationSpeed;
             
-            // Update puff animations
-            if (cloud.puffs) {
-                for (let p = 0; p < cloud.puffs.length; p++) {
-                    const puff = cloud.puffs[p];
-                    puff.driftAngle += puff.driftSpeed * 0.5;
-                    puff.pulsePhase += puff.pulseSpeed * 0.5;
+            // Skip animations on mobile for performance
+            if (!isMobile) {
+                cloud.wobble += cloud.wobbleSpeed;
+                cloud.rotation += cloud.rotationSpeed;
+                
+                // Update puff animations
+                if (cloud.puffs) {
+                    for (let p = 0; p < cloud.puffs.length; p++) {
+                        const puff = cloud.puffs[p];
+                        puff.driftAngle += puff.driftSpeed * 0.5;
+                        puff.pulsePhase += puff.pulseSpeed * 0.5;
+                    }
                 }
             }
             
@@ -1690,8 +1694,12 @@ function initSpaceScene() {
 
             ctx.save();
             ctx.translate(x, y);
-            ctx.rotate(cloud.rotation);
-            ctx.scale(1, cloud.stretch);
+            
+            // Skip rotation/stretch transforms on mobile
+            if (!isMobile) {
+                ctx.rotate(cloud.rotation);
+                ctx.scale(1, cloud.stretch);
+            }
             
             // Draw all puffs with uniform opacity
             const puffs = cloud.puffs;
@@ -1701,23 +1709,30 @@ function initSpaceScene() {
             for (let p = 0; p < puffCount; p++) {
                 const puff = puffs[p];
                 
-                // Use pre-calculated drift positions (animations updated in updateGasClouds)
-                const driftX = Math.cos(puff.driftAngle) * puff.driftRadius * 0.5;
-                const driftY = Math.sin(puff.driftAngle) * puff.driftRadius * 0.3;
-                const animatedX = puff.baseX + driftX;
-                const animatedY = puff.baseY + driftY;
-                
-                const puffX = animatedX * radius;
-                const puffY = animatedY * radius;
-                const pulseAmount = puff.pulseAmount * 0.5;
-                const pulse = 1 + Math.sin(puff.pulsePhase) * pulseAmount;
-                const puffRadius = radius * puff.size * pulse;
+                // On mobile: use static positions, no drift/pulse animations
+                let puffX, puffY, puffRadius;
+                if (isMobile) {
+                    puffX = puff.baseX * radius;
+                    puffY = puff.baseY * radius;
+                    puffRadius = radius * puff.size;
+                } else {
+                    // Desktop: use animated drift positions
+                    const driftX = Math.cos(puff.driftAngle) * puff.driftRadius * 0.5;
+                    const driftY = Math.sin(puff.driftAngle) * puff.driftRadius * 0.3;
+                    const animatedX = puff.baseX + driftX;
+                    const animatedY = puff.baseY + driftY;
+                    puffX = animatedX * radius;
+                    puffY = animatedY * radius;
+                    const pulseAmount = puff.pulseAmount * 0.5;
+                    const pulse = 1 + Math.sin(puff.pulsePhase) * pulseAmount;
+                    puffRadius = radius * puff.size * pulse;
+                }
                 
                 // Skip if too small (higher threshold on mobile)
                 if (puffRadius < (isMobile ? 8 : 4)) continue;
                 
-                // Color blending
-                const blendFactor = (animatedX + animatedY + 1) * 0.5;
+                // Color blending (use base positions for consistency)
+                const blendFactor = (puff.baseX + puff.baseY + 1) * 0.5;
                 const smoothBlend = blendFactor * blendFactor * (3 - 2 * blendFactor);
                 const invBlend = 1 - smoothBlend;
                 
