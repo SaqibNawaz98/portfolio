@@ -354,13 +354,31 @@ function initSpaceScene() {
     const brightStars = [];
     const maxBrightStars = 5;
 
+    let lastWidth = 0;
+    let lastHeight = 0;
+    
     function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
+        const newWidth = window.innerWidth;
+        const newHeight = window.innerHeight;
+        
+        // On mobile, only reinitialize if width changed (ignore height changes from address bar)
+        const widthChanged = Math.abs(newWidth - lastWidth) > 50;
+        const heightChanged = Math.abs(newHeight - lastHeight) > 50;
+        const needsReinit = isMobile ? widthChanged : (widthChanged || heightChanged);
+        
+        width = canvas.width = newWidth;
+        height = canvas.height = newHeight;
         centerX = width / 2;
         centerY = height / 2;
-        initStars();
-        initGasClouds();
+        
+        // Only reinitialize stars/clouds on significant size change or first load
+        if (needsReinit || lastWidth === 0) {
+            initStars();
+            initGasClouds();
+        }
+        
+        lastWidth = newWidth;
+        lastHeight = newHeight;
         
         // Initialize encounter and bright stars
         if (!currentEncounter) {
